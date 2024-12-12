@@ -6,6 +6,7 @@
 class FontFile
 {
 public:
+    uint64_t read_64();
     std::uint32_t read_32();
 
     uint16_t read_16();

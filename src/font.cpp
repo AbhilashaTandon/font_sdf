@@ -28,6 +28,8 @@ Font::Font(std::string file_path) : file(file_path)
 
         this->table_offsets[table_name] = offset;
         this->table_lengths[table_name] = length;
+
+        printf("%s\t0x%x\t%d\n", table_name.c_str(), offset, offset);
     }
 
     for (std::string table_name : req_tables)
@@ -41,7 +43,7 @@ Font::Font(std::string file_path) : file(file_path)
 
     file.jump_to(table_offsets["maxp"]);
 
-    uint16_t version = file.read_16();
+    uint32_t version = file.read_32();
 
     if (version == 0x00005000)
     {
@@ -56,8 +58,39 @@ Font::Font(std::string file_path) : file(file_path)
     this->num_glyphs = file.read_16();
     this->max_points = file.read_16();
     this->max_contours = file.read_16();
+
+    file.jump_to(this->table_offsets["head"] + 50);
+    // printf("version %d\n", file.read_32());
+    // printf("font revision %d\n", file.read_32());
+    // printf("checksum %d\n", file.read_32());
+    // printf("magic number (should be 0x5F0F3CF5) %x\n", file.read_32());
+    // printf("flags %d\n", file.read_16());
+    // printf("units per em (range from 64 to 16384) %d\n", file.read_16());
+    // printf("created date %d\n", file.read_64());
+    // printf("modified date %d\n", file.read_64());
+    // printf("xmin %d\n", file.read_16_signed());
+    // printf("ymin %d\n", file.read_16_signed());
+    // printf("xmax %d\n", file.read_16_signed());
+    // printf("ymax %d\n", file.read_16_signed());
+    // printf("mac style %d\n", file.read_16());
+    // printf("smallest readable size %d\n", file.read_16());
+    // printf("font dir hint %d\n", file.read_16_signed());
+
+    switch (file.read_16_signed())
+    {
+    case 0:
+        this->long_glyph_offsets = false;
+        break;
+    case 1:
+        this->long_glyph_offsets = true;
+        break;
+    default:
+        throw std::runtime_error("Malformed head table");
+    }
 }
 
-void Font::read_glyphs()
+void Font::read_loca()
 {
+    uint32_t loca_start = this->table_offsets["loca"];
+    file.jump_to(loca_start);
 }

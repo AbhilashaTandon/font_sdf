@@ -1,32 +1,4 @@
-#include "read_cmap.h"
-#include "font_file.h"
-#include <cassert>
-
-std::vector<cmap_range> read_cmap_table(FontFile *f, uint32_t start_idx, uint32_t length)
-{
-    (*f).jump_to(start_idx);
-    uint16_t version = (*f).read_16();
-    assert(version == 0);
-    uint16_t num_subtables = (*f).read_16();
-
-    uint16_t unicode_2_offset = 0;
-
-    for (int i = 0; i < num_subtables; i++)
-    {
-        uint16_t platform_id = (*f).read_16();
-        uint16_t platform_specific_id = (*f).read_16();
-        uint32_t offset = (*f).read_32();
-        if ((platform_id == UNICODE_PLATFORM_ID) && (platform_specific_id == UNICODE_V2))
-        {
-            unicode_2_offset = offset;
-            break;
-        }
-    }
-
-    (*f).jump_to(start_idx + unicode_2_offset);
-
-    return read_formats(f);
-}
+#include "font.h"
 
 std::vector<cmap_range> read_formats(FontFile *f)
 {
@@ -100,4 +72,32 @@ std::vector<cmap_range> read_format_12(FontFile *f)
     }
 
     return ranges;
+}
+
+void Font::read_cmap()
+{
+    uint32_t cmap_start = this->table_offsets["cmap"];
+    file.jump_to(cmap_start);
+    uint16_t version = file.read_16();
+    assert(version == 0);
+    uint16_t num_subtables = file.read_16();
+
+    uint16_t unicode_2_offset = 0;
+
+    for (int i = 0; i < num_subtables; i++)
+    {
+        uint16_t platform_id = file.read_16();
+        uint16_t platform_specific_id = file.read_16();
+        uint32_t offset = file.read_32();
+        if ((platform_id == UNICODE_PLATFORM_ID) && (platform_specific_id == UNICODE_V2))
+        {
+            // we're only interested in the Unicode V2 cmap table
+            unicode_2_offset = offset;
+            break;
+        }
+    }
+
+    file.jump_to(cmap_start + unicode_2_offset);
+
+    this->cmap_ranges = read_formats(&file);
 }

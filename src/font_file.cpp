@@ -1,5 +1,20 @@
 #include "font_file.h"
 
+uint64_t FontFile::read_64()
+{
+    uint64_t out = 0;
+
+    for (int i = 0; i < 8; i++)
+    {
+        char byte = 0;
+        file.read(&byte, 1);
+
+        out <<= 8;
+        out |= (unsigned char)byte;
+    }
+    return out;
+}
+
 std::uint32_t FontFile::read_32()
 {
     std::uint32_t out = 0;

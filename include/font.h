@@ -1,14 +1,38 @@
 #pragma once
+
+#define MAC_PLATFORM_ID 1
+#define MICROSOFT_PLATFORM_ID 3
+#define UNICODE_PLATFORM_ID 0
+#define UNICODE_V1_0 0
+#define UNICODE_V1_1 1
+#define UNICODE_V2 3
+
 #include "font_file.h"
 #include "glyph.h"
 #include "unordered_map"
+#include <vector>
+#include <cassert>
+
+struct cmap_range
+{
+    uint32_t first_char_code;
+    uint32_t last_char_code;
+    uint32_t start_glyph_id;
+};
+// each range is a sequential group of mappings
+// first_char_code -> start_glyph_id
+// first_char_code + 1 -> start_glyph_id + 1
+//...
+// last_char_code -> start_glyph_id + (last_char_code - first_char_code)
 
 class Font
 {
 public:
     Font(std::string file_path);
 
-    void read_glyphs();
+    void read_cmap();
+    void read_loca();
+    void read_glyf();
 
 private:
     FontFile file;
@@ -23,6 +47,8 @@ private:
 
     bool long_glyph_offsets;
     // whether glyph offsets in loca table are 2 bytes (false) or 4 bytes (true)
+
+    std::vector<cmap_range> cmap_ranges;
 };
 
 // i want some way of mapping ascii codes to glyphs
@@ -31,16 +57,5 @@ private:
 // the cmap table maps character codes to glyph ids
 // the loca table maps glyph ids to offsets in the glyf table
 // because of this i will need some intermediate representation of the data in cmap
-
-struct cmap_range
-{
-    uint32_t first_char_code;
-    uint32_t last_char_code;
-    uint32_t start_glyph_id;
-};
-
-// each range is a sequential group of mappings
-// first_char_code -> start_glyph_id
-// first_char_code + 1 -> start_glyph_id + 1
-//...
-// last_char_code -> start_glyph_id + (last_char_code - first_char_code)
+std::vector<cmap_range> read_formats(FontFile *f);
+std::vector<cmap_range> read_format_12(FontFile *f);
