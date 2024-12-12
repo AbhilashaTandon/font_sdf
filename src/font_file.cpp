@@ -84,7 +84,12 @@ void FontFile::skip_ahead(const int32_t offset)
     file.seekg(offset, std::ios_base::cur);
 }
 
-FontFile::FontFile(const char *file_path)
+int FontFile::get_index()
+{
+    return int(this->file.tellg());
+}
+
+FontFile::FontFile(std::string file_path)
 {
 
     file = std::ifstream(file_path, std::ios::in | std::ios::binary);
@@ -99,7 +104,7 @@ std::string FontFile::read_string(const uint32_t num_chars)
 {
     std::string out = "";
 
-    for (int i = 0; i < num_chars; i++)
+    for (unsigned int i = 0; i < num_chars; i++)
     {
         char next = 0;
         file.read(&next, 1);

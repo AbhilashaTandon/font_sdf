@@ -15,6 +15,7 @@ class Glyph
 {
 public:
     Glyph(FontFile *f, uint32_t start_idx);
+    Glyph(FontFile *f);
     void read_compound_glyph(FontFile *f);
     void read_simple_glyph(FontFile *f);
     // we always pass in file to make it clear to the caller when the FontFile char pointer is being moved
@@ -31,11 +32,12 @@ public:
         }
     }
 
+    void show_bbox(sf::RenderWindow *window);
     void show_glyph(sf::RenderWindow *window);
     void show_points(sf::RenderWindow *window);
 
 private:
-    uint16_t num_contours;
+    int16_t num_contours;
     bool compound_glyph;
     int16_t xmin;
     int16_t xmax;

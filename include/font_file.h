@@ -22,7 +22,9 @@ public:
 
     void skip_ahead(const int32_t offset);
 
-    FontFile(const char *file_path);
+    int get_index();
+
+    FontFile(std::string file_path);
     virtual ~FontFile();
     std::string read_string(const uint32_t num_chars);
 

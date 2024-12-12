@@ -51,7 +51,7 @@ void read_formats(FontFile *f)
         case 8:
         case 10:
         case 12:
-            read_format_4(f);
+            read_format_12(f);
         case 13:
         {
             (*f).skip_ahead(2);
@@ -72,12 +72,12 @@ void read_formats(FontFile *f)
     }
 }
 
-void read_format_4(FontFile *f)
+void read_format_12(FontFile *f)
 {
     uint16_t reserved = (*f).read_16();
     assert(reserved == 0);
     uint32_t length = (*f).read_32();
-    uint32_t language = (*f).read_32(); // unneeded for my purposes
+    (*f).read_32(); // language: unneeded for my purposes
     uint32_t num_groups = (*f).read_32();
 
     for (int i = 0; i < num_groups; i++)

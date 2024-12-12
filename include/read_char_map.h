@@ -14,4 +14,4 @@ void read_char_map_table(FontFile *f, uint32_t start_idx, uint32_t length);
 
 void read_formats(FontFile *f);
 
-void read_format_4(FontFile *f);
+void read_format_12(FontFile *f);
