@@ -92,5 +92,32 @@ Font::Font(std::string file_path) : file(file_path)
 void Font::read_loca()
 {
     uint32_t loca_start = this->table_offsets["loca"];
+    uint32_t loca_length = this->table_lengths["loca"];
     file.jump_to(loca_start);
+
+    if (this->long_glyph_offsets)
+    {
+        uint32_t max_iter = loca_length / 4;
+        for (int i = 0; i < max_iter; i++)
+        {
+            this->glyph_offsets.push_back(file.read_32());
+        }
+    }
+    else
+    {
+        uint32_t max_iter = loca_length / 2;
+        for (int i = 0; i < max_iter; i++)
+        {
+            this->glyph_offsets.push_back(uint32_t(file.read_16()));
+        }
+    }
+
+    // if long_glyph_offsets all loca entries are uint32s, else theyre uint16s
+}
+
+uint32_t Font::get_glyph_offset(uint32_t unicode_value)
+{
+    for (struct cmap_range range : cmap_ranges)
+    {
+        }
 }

@@ -32,6 +32,9 @@ public:
 
     void read_cmap();
     void read_loca();
+
+    uint32_t get_glyph_offset(uint32_t unicode_value);
+
     void read_glyf();
 
 private:
@@ -49,6 +52,7 @@ private:
     // whether glyph offsets in loca table are 2 bytes (false) or 4 bytes (true)
 
     std::vector<cmap_range> cmap_ranges;
+    std::vector<uint32_t> glyph_offsets;
 };
 
 // i want some way of mapping ascii codes to glyphs
