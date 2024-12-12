@@ -113,7 +113,7 @@ std::string FontFile::read_string(const uint32_t num_chars)
     return out;
 }
 
-bool FontFile::good() const
+bool FontFile::is_good() const
 {
     return file.good();
 }

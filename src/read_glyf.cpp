@@ -14,20 +14,6 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     assert(this->ymin <= this->ymax);
 }
 
-Glyph::Glyph(FontFile *f)
-{
-    int current_idx = (*f).get_index();
-    printf("\n\nindex: %d 0x%x\n\n", (*f).get_index(), (*f).get_index());
-    this->num_contours = (*f).read_16_signed();
-    this->compound_glyph = num_contours < 0;
-    this->xmin = (*f).read_16_signed();
-    this->ymin = (*f).read_16_signed();
-    this->xmax = (*f).read_16_signed();
-    this->ymax = (*f).read_16_signed();
-    assert(this->xmin <= this->xmax);
-    assert(this->ymin <= this->ymax);
-}
-
 void Glyph::read_compound_glyph(FontFile *f)
 {
 }

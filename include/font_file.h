@@ -28,7 +28,7 @@ public:
     virtual ~FontFile();
     std::string read_string(const uint32_t num_chars);
 
-    bool good() const;
+    bool is_good() const;
 
 private:
     std::ifstream file;

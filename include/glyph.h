@@ -15,7 +15,6 @@ class Glyph
 {
 public:
     Glyph(FontFile *f, uint32_t start_idx);
-    Glyph(FontFile *f);
     void read_compound_glyph(FontFile *f);
     void read_simple_glyph(FontFile *f);
     // we always pass in file to make it clear to the caller when the FontFile char pointer is being moved

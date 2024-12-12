@@ -1,8 +1,8 @@
-#include "read_char_map.h"
+#include "read_cmap.h"
 #include "font_file.h"
 #include <cassert>
 
-void read_char_map_table(FontFile *f, uint32_t start_idx, uint32_t length)
+std::vector<cmap_range> read_cmap_table(FontFile *f, uint32_t start_idx, uint32_t length)
 {
     (*f).jump_to(start_idx);
     uint16_t version = (*f).read_16();
@@ -25,10 +25,10 @@ void read_char_map_table(FontFile *f, uint32_t start_idx, uint32_t length)
 
     (*f).jump_to(start_idx + unicode_2_offset);
 
-    read_formats(f);
+    return read_formats(f);
 }
 
-void read_formats(FontFile *f)
+std::vector<cmap_range> read_formats(FontFile *f)
 {
     for (int i = 0; i < 100; i++)
     {
@@ -51,7 +51,7 @@ void read_formats(FontFile *f)
         case 8:
         case 10:
         case 12:
-            read_format_12(f);
+            return read_format_12(f);
         case 13:
         {
             (*f).skip_ahead(2);
@@ -70,9 +70,11 @@ void read_formats(FontFile *f)
             break;
         }
     }
+
+    throw std::runtime_error("CMAP table format 12 not found");
 }
 
-void read_format_12(FontFile *f)
+std::vector<cmap_range> read_format_12(FontFile *f)
 {
     uint16_t reserved = (*f).read_16();
     assert(reserved == 0);
@@ -80,11 +82,22 @@ void read_format_12(FontFile *f)
     (*f).read_32(); // language: unneeded for my purposes
     uint32_t num_groups = (*f).read_32();
 
+    std::vector<cmap_range> ranges;
+
     for (int i = 0; i < num_groups; i++)
     {
         uint32_t first_char_code = (*f).read_32();
         uint32_t last_char_code = (*f).read_32();
         uint32_t start_glyph_code = (*f).read_32();
-        printf("%d\t%d\t%d\n", first_char_code, last_char_code, start_glyph_code);
+
+        if (first_char_code >= 128)
+        {
+            break; // past ascii printable range
+        }
+
+        struct cmap_range current_range{first_char_code, last_char_code, start_glyph_code};
+        ranges.push_back(current_range);
     }
+
+    return ranges;
 }
