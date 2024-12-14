@@ -1,5 +1,6 @@
 #include <cassert>
 #include "font.h"
+#include "bezier.h"
 #define PADDING 0.f
 #define TEXT_SIZE 16
 #define BBOX_COLOR sf::Color(32, 32, 32)
@@ -77,13 +78,8 @@ void Font::show_bbox(sf::RenderWindow *window, uint32_t char_code)
 
 void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
 {
-    show_bbox(window, char_code);
-    sf::Font font;
-    if (!font.loadFromFile(this->file_path))
-    {
-        assert(false);
-    }
 
+    show_bbox(window, char_code);
     Glyph g = get_glyph_outline(char_code);
 
     sf::Vector2f char_top_left = convert_coordinate(g.xmin, g.ymin, window);
@@ -100,30 +96,69 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
     char_bbox.setFillColor(CHAR_BBOX_COLOR);
     window->draw(char_bbox);
 
+    sf::Font font;
+    if (!font.loadFromFile(this->file_path))
+    {
+        assert(false);
+    }
+
+    sf::Text ref_glyph;
+    sf::Font current_font;
+    current_font.loadFromFile(this->file_path);
+    ref_glyph.setFont(current_font);
+    std::string unicode_char = "";
+    unicode_char += (char(char_code));
+    ref_glyph.setString(unicode_char);
+    ref_glyph.setPosition(sf::Vector2f(PADDING * 2, PADDING));
+    ref_glyph.setCharacterSize(int(500));
+    ref_glyph.setFillColor(sf::Color::White);
+    window->draw(ref_glyph);
+
     int prev_ctour_end = -1;
 
     for (int i = 0; i < g.contours.size(); i++)
     {
         struct Contour current = g.contours[i];
-        int ctour_end = g.contour_ends[i];
         //
-        for (int j = 0; j < current.vertices.size(); j++)
+
+        int ctour_len = current.vertices.size();
+        for (int j = 0; j < ctour_len; j++)
         {
             struct Vertex vx = current.vertices[j];
 
-            sf::Vector2f window_coords = convert_coordinate(vx.x_coord, vx.y_coord, window);
+            if (vx.vxtype == VxType::off_curve)
+            {
+                continue;
+            }
 
-            assert(vx.x_coord >= this->xmin && vx.x_coord <= this->xmax);
-            assert(vx.y_coord >= this->ymin && vx.y_coord <= this->ymax);
+            sf::Vector2f vx_window = convert_coordinate(vx.x_coord, vx.y_coord, window);
 
-            sf::Text text;
-            text.setFont(font);
+            struct Vertex next = current.vertices[(j + 1) % (ctour_len)];
 
-            text.setString(std::to_string(j));
-            text.setCharacterSize(TEXT_SIZE);
+            sf::Vector2f next_window = convert_coordinate(next.x_coord, next.y_coord, window);
+
+            if (next.vxtype == VxType::off_curve)
+            {
+                // use 3 pts to draw bezier
+                struct Vertex end = current.vertices[(j + 2) % (ctour_len)];
+
+                sf::Vector2f end_window = convert_coordinate(end.x_coord, end.y_coord, window);
+
+                sf::VertexArray bezier = get_bezier_indices(vx_window, next_window, end_window);
+                window->draw(bezier);
+            }
+            else
+            {
+
+                // draw line
+                sf::Vertex line[] =
+                    {
+                        sf::Vertex(vx_window),
+                        sf::Vertex(next_window)};
+
+                window->draw(line, 2, sf::Lines);
+            }
         }
-
-        prev_ctour_end = ctour_end;
     }
 }
 

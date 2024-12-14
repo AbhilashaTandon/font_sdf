@@ -62,7 +62,7 @@ int main()
         }
         window.clear();
 
-        f.show_points(&window, ascii_code, color_contours);
+        f.show_glyph(&window, ascii_code);
         window.display();
     }
 

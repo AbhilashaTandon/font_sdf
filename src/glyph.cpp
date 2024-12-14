@@ -201,6 +201,7 @@ void Glyph::read_simple_glyph(FontFile *f)
                 assert(false);
             }
             struct Vertex vx = vertices[vx_idx];
+            c.vertices.push_back(vx);
         }
 
         //

@@ -123,6 +123,7 @@ int Font::get_glyph_offset(uint32_t unicode_value) const
             continue;
         }
         uint32_t glyph_id = range.start_glyph_id + (unicode_value - range.first_char_code);
+        printf("%d %d\n", unicode_value, glyph_id);
         return (glyph_id < glyph_offsets.size()) ? glyph_offsets[glyph_id] : -1;
     }
     return -1;
