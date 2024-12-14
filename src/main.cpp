@@ -8,42 +8,63 @@
 
 int main()
 {
+    // Font f = Font("/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf");
+    Font f = Font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    sf::RenderWindow window(sf::VideoMode(1600, 800), "SFML works!");
 
-    Font f = Font("/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf");
+    uint32_t ascii_code = 0;
 
-    // Glyph g = Glyph(&f, glyf_start);
-    // g.read_glyph(&f);
+    while (f.get_glyph_offset(ascii_code) == -1)
+    {
+        ascii_code++;
+    }
 
-    // sf::RenderWindow window(sf::VideoMode(800, 800), "SFML works!");
+    bool color_contours = false;
 
-    // while (window.isOpen())
-    // {
-    //     sf::Event event;
-    //     while (window.pollEvent(event))
-    //     {
-    //         if (event.type == sf::Event::Closed)
-    //         {
-    //             window.close();
-    //         }
-    //         else if (event.type == sf::Event::KeyPressed)
-    //         {
-    //             if (event.key.scancode == sf::Keyboard::Scan::Escape)
-    //             {
-    //                 window.close();
-    //             }
-    //             else if (event.key.scancode == sf::Keyboard::Scan::Space)
-    //             {
-    //                 g = Glyph(&f);
-    //                 g.read_glyph(&f);
-    //             }
-    //         }
-    //     }
+    while (window.isOpen())
+    {
+        sf::Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == sf::Event::Closed)
+            {
+                window.close();
+            }
+            else if (event.type == sf::Event::KeyPressed)
+            {
+                if (event.key.scancode == sf::Keyboard::Scan::Escape)
+                {
+                    window.close();
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Right)
+                {
+                    ascii_code++;
 
-    //     window.clear();
-    //     g.show_points(&window);
+                    while (f.get_glyph_offset(ascii_code) == -1)
+                    {
+                        ascii_code++;
+                    }
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Left)
+                {
+                    ascii_code--;
+                    while (f.get_glyph_offset(ascii_code) == -1)
+                    {
+                        ascii_code--;
+                    }
+                }
 
-    //     window.display();
-    // }
+                else if (event.key.scancode == sf::Keyboard::Scan::Space)
+                {
+                    color_contours = !color_contours;
+                }
+            }
+        }
+        window.clear();
+
+        f.show_points(&window, ascii_code, color_contours);
+        window.display();
+    }
 
     return 0;
 }

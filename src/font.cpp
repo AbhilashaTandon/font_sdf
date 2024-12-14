@@ -1,6 +1,6 @@
-#include "font.h"
 #include <stdexcept>
 #include <iostream>
+#include "font.h"
 
 const std::string req_tables[] = {"cmap", "glyf", "head", "hhea", "hmtx", "loca", "maxp", "name", "post"};
 
@@ -28,8 +28,6 @@ Font::Font(std::string file_path) : file(file_path)
 
         this->table_offsets[table_name] = offset;
         this->table_lengths[table_name] = length;
-
-        printf("%s\t0x%x\t%d\n", table_name.c_str(), offset, offset);
     }
 
     for (std::string table_name : req_tables)
@@ -59,22 +57,18 @@ Font::Font(std::string file_path) : file(file_path)
     this->max_points = file.read_16();
     this->max_contours = file.read_16();
 
-    file.jump_to(this->table_offsets["head"] + 50);
-    // printf("version %d\n", file.read_32());
-    // printf("font revision %d\n", file.read_32());
-    // printf("checksum %d\n", file.read_32());
-    // printf("magic number (should be 0x5F0F3CF5) %x\n", file.read_32());
-    // printf("flags %d\n", file.read_16());
-    // printf("units per em (range from 64 to 16384) %d\n", file.read_16());
-    // printf("created date %d\n", file.read_64());
-    // printf("modified date %d\n", file.read_64());
-    // printf("xmin %d\n", file.read_16_signed());
-    // printf("ymin %d\n", file.read_16_signed());
-    // printf("xmax %d\n", file.read_16_signed());
-    // printf("ymax %d\n", file.read_16_signed());
-    // printf("mac style %d\n", file.read_16());
-    // printf("smallest readable size %d\n", file.read_16());
-    // printf("font dir hint %d\n", file.read_16_signed());
+    file.jump_to(this->table_offsets["head"] + 36);
+    this->xmin = file.read_16_signed();
+    this->ymin = file.read_16_signed();
+    this->xmax = file.read_16_signed();
+    this->ymax = file.read_16_signed();
+
+    assert(this->xmax >= this->xmin);
+    assert(this->ymax >= this->ymin);
+
+    this->aspect_ratio = float(this->xmax - this->xmin) / float(this->ymax - this->ymin);
+
+    file.skip_ahead(6);
 
     switch (file.read_16_signed())
     {
@@ -87,6 +81,9 @@ Font::Font(std::string file_path) : file(file_path)
     default:
         throw std::runtime_error("Malformed head table");
     }
+
+    read_cmap();
+    read_loca();
 }
 
 void Font::read_loca()
@@ -98,7 +95,7 @@ void Font::read_loca()
     if (this->long_glyph_offsets)
     {
         uint32_t max_iter = loca_length / 4;
-        for (int i = 0; i < max_iter; i++)
+        for (unsigned int i = 0; i < max_iter; i++)
         {
             this->glyph_offsets.push_back(file.read_32());
         }
@@ -106,7 +103,7 @@ void Font::read_loca()
     else
     {
         uint32_t max_iter = loca_length / 2;
-        for (int i = 0; i < max_iter; i++)
+        for (unsigned int i = 0; i < max_iter; i++)
         {
             this->glyph_offsets.push_back(uint32_t(file.read_16()));
         }
@@ -115,9 +112,30 @@ void Font::read_loca()
     // if long_glyph_offsets all loca entries are uint32s, else theyre uint16s
 }
 
-uint32_t Font::get_glyph_offset(uint32_t unicode_value)
+int Font::get_glyph_offset(uint32_t unicode_value) const
 {
-    for (struct cmap_range range : cmap_ranges)
+
+    for (unsigned int i = 0; i < cmap_ranges.size(); i++)
     {
+        struct cmap_range range = cmap_ranges[i];
+        if (range.first_char_code > unicode_value)
+        {
+            continue;
         }
+        uint32_t glyph_id = range.start_glyph_id + (unicode_value - range.first_char_code);
+        return (glyph_id < glyph_offsets.size()) ? glyph_offsets[glyph_id] : -1;
+    }
+    return -1;
+}
+
+Glyph Font::get_glyph_outline(uint32_t unicode_value)
+{
+    int offset = get_glyph_offset(unicode_value);
+    if (offset == -1)
+    {
+        throw std::runtime_error("Glyph not found in file");
+    }
+    Glyph g = Glyph(&file, this->table_offsets["glyf"] + get_glyph_offset(unicode_value));
+    g.read_glyph(&file);
+    return g;
 }

@@ -2,3 +2,4 @@ build/
 sfml
 build_and_run.sh
 .vscode/
+log.txt

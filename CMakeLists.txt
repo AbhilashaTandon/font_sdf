@@ -12,7 +12,7 @@ file(GLOB all_SRCS
     "${PROJECT_SOURCE_DIR}/src/*.c"
     "${PROJECT_SOURCE_DIR}/src/*.cpp"
 )
-add_compile_options(-g -Wall -Wextra -Wpedantic)
+add_compile_options(-g -Wall -Wextra -Wpedantic -O0)
 
 add_executable(${PROJECT_NAME} ${all_SRCS})
 target_link_libraries(${PROJECT_NAME} sfml-graphics)

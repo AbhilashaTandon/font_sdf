@@ -12,6 +12,10 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     this->ymax = (*f).read_16_signed();
     assert(this->xmin <= this->xmax);
     assert(this->ymin <= this->ymax);
+    this->contour_ends = std::vector<uint16_t>();
+    this->vertices = std::vector<Vertex>();
+    this->contours = std::vector<Contour>();
+    this->flags = std::vector<uint8_t>();
 }
 
 void Glyph::read_compound_glyph(FontFile *f)
@@ -21,6 +25,43 @@ void Glyph::read_compound_glyph(FontFile *f)
 bool is_bit_set(uint8_t byte, uint8_t bit_idx)
 {
     return ((byte >> bit_idx) & 1) == 1;
+}
+
+// https://stackoverflow.com/a/1180256
+// Find the vertex with smallest y (and largest x if there are ties). Let the vertex be A and the previous vertex in the list be B and the next vertex in the list be C. Now compute the sign of the cross product of AB and AC.
+bool is_clockwise(const std::vector<Vertex> vxs)
+{
+    struct Vertex lowest = vxs[0];
+    int lowest_idx = 0;
+
+    int num_vxs = vxs.size();
+
+    for (int i = 0; i < num_vxs; i++)
+    {
+        struct Vertex vx = vxs[i];
+        if (vx.y_coord < lowest.y_coord)
+        {
+            lowest = vx;
+            lowest_idx = i;
+        }
+        else if (vx.y_coord == lowest.y_coord)
+        {
+            if (vx.x_coord > lowest.x_coord)
+            {
+                lowest = vx;
+                lowest_idx = i;
+            }
+        }
+    }
+    int prev_vx_idx = (lowest_idx + num_vxs) % (num_vxs + 1); // modulus since we're in a loop
+    int next_vx_idx = (lowest_idx + num_vxs + 2) % (num_vxs + 1);
+
+    struct Vertex prev = vxs[prev_vx_idx];
+    struct Vertex next = vxs[next_vx_idx];
+
+    int cross = (prev.x_coord - lowest.x_coord) * (next.y_coord - lowest.y_coord) - (prev.y_coord - lowest.y_coord) * (next.x_coord - lowest.x_coord);
+
+    return cross > 0;
 }
 
 void Glyph::read_simple_glyph(FontFile *f)
@@ -33,6 +74,8 @@ void Glyph::read_simple_glyph(FontFile *f)
     }
 
     this->num_vertices = contour_ends.back() + 1;
+
+    assert(num_vertices > 2);
 
     uint16_t instruction_len = (*f).read_16();
     (*f).skip_ahead(instruction_len);
@@ -60,8 +103,8 @@ void Glyph::read_simple_glyph(FontFile *f)
     }
     assert(flag_count == this->num_vertices);
     assert(flags.size() == this->num_vertices);
-    std::vector<int16_t> x_coords{};
-    std::vector<int16_t> y_coords{};
+    std::vector<int16_t> x_coords = std::vector<int16_t>();
+    std::vector<int16_t> y_coords = std::vector<int16_t>();
 
     x_coords.push_back(0);
     y_coords.push_back(0);
@@ -131,12 +174,61 @@ void Glyph::read_simple_glyph(FontFile *f)
     {
         uint8_t flag = flags[i - 1];
         bool on_curve = flag & 1;
-        struct Vertex v{x_coords[i], y_coords[i], on_curve};
-        this->vertices.push_back(v);
+        struct Vertex vx;
+        vx.x_coord = x_coords[i];
+        vx.y_coord = y_coords[i];
+        vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
+        vertices.push_back(vx);
+
         bool x_short = is_bit_set(flag, 1);
         bool y_short = is_bit_set(flag, 2);
         bool x_sign = x_short ? (is_bit_set(flag, 4)) : x_coords[i] > 0;
         bool y_sign = y_short ? (is_bit_set(flag, 5)) : y_coords[i] > 0;
-        // printf("%d %d %s %s %s %s %s\n", x_coords[i], y_coords[i], on_curve ? "ON_CURVE" : "OFF_CURVE", x_short ? "X 1 byte" : "X 2 bytes", y_short ? "Y 1 byte" : "Y 2 bytes", x_sign ? "X POS" : "X NEG", y_sign ? "Y POS" : "Y NEG");
+    }
+
+    int prev_ctour_end = -1;
+    int ctour_end = contour_ends[0];
+    for (int ctour = 0; ctour < num_contours; ctour++)
+    {
+        ctour_end = contour_ends[ctour];
+
+        struct Contour c;
+        c.vertices = std::vector<Vertex>();
+        for (int vx_idx = prev_ctour_end + 1; vx_idx <= ctour_end; vx_idx++)
+        {
+            if ((vx_idx) >= vertices.size())
+            {
+                assert(false);
+            }
+            struct Vertex vx = vertices[vx_idx];
+        }
+
+        //
+        // assert(c.vertices.size() == ctour_end + 1);
+
+        c.is_clockwise = is_clockwise(c.vertices);
+
+        // add missing vxs on curve btwn off curve pts
+
+        for (int i = 0; i < c.vertices.size(); i++)
+        {
+            struct Vertex current = c.vertices[i];
+            int next_idx = (i + 1 == c.vertices.size()) ? 0 : (i + 1);
+
+            struct Vertex next = c.vertices[next_idx];
+            if (current.vxtype == off_curve && next.vxtype == off_curve)
+            {
+                struct Vertex midpoint;
+                midpoint.x_coord = (current.x_coord + next.x_coord) / 2;
+                midpoint.y_coord = (current.y_coord + next.y_coord) / 2;
+
+                midpoint.vxtype = VxType::hidden;
+                c.vertices.insert(c.vertices.begin() + i + 1, midpoint);
+            }
+        }
+
+        contours.push_back(c);
+
+        prev_ctour_end = ctour_end;
     }
 }

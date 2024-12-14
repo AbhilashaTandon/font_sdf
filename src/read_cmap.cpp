@@ -6,9 +6,8 @@ std::vector<cmap_range> read_formats(FontFile *f)
     {
 
         uint16_t format = (*f).read_16();
-        printf("format %d\n", format);
 
-        // only formats 4 and 12 are really used, but we still need to handle their haders to skip ahead to the next one
+        // only formats 4 and 12 are really used, but we still need to handle their headers to skip ahead to the next one
         switch (format)
         {
         case 0:
@@ -54,7 +53,7 @@ std::vector<cmap_range> read_format_12(FontFile *f)
     (*f).read_32(); // language: unneeded for my purposes
     uint32_t num_groups = (*f).read_32();
 
-    std::vector<cmap_range> ranges;
+    std::vector<cmap_range> ranges = std::vector<cmap_range>();
 
     for (int i = 0; i < num_groups; i++)
     {

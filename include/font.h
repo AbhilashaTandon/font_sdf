@@ -33,9 +33,15 @@ public:
     void read_cmap();
     void read_loca();
 
-    uint32_t get_glyph_offset(uint32_t unicode_value);
+    int get_glyph_offset(uint32_t unicode_value) const;
 
-    void read_glyf();
+    Glyph get_glyph_outline(uint32_t unicode_value);
+
+    void show_bbox(sf::RenderWindow *window, uint32_t char_code);
+    void show_glyph(sf::RenderWindow *window, uint32_t char_code);
+    void show_points(sf::RenderWindow *window, uint32_t char_code, bool color_contours);
+
+    sf::Vector2f convert_coordinate(int16_t x, int16_t y, const sf::RenderWindow *window) const;
 
 private:
     FontFile file;
@@ -53,6 +59,13 @@ private:
 
     std::vector<cmap_range> cmap_ranges;
     std::vector<uint32_t> glyph_offsets;
+
+    int16_t xmin;
+    int16_t xmax;
+    int16_t ymin;
+    int16_t ymax;
+
+    float aspect_ratio;
 };
 
 // i want some way of mapping ascii codes to glyphs
