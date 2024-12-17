@@ -109,55 +109,20 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
     std::string unicode_char = "";
     unicode_char += (char(char_code));
     ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(PADDING * 2, PADDING));
+    ref_glyph.setPosition(sf::Vector2f(PADDING * 2, PADDING * 2));
     ref_glyph.setCharacterSize(int(500));
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);
 
     int prev_ctour_end = -1;
 
-    for (int i = 0; i < g.contours.size(); i++)
+    for (struct Contour c : g.contours)
     {
-        struct Contour current = g.contours[i];
+
         //
-
-        int ctour_len = current.vertices.size();
-        for (int j = 0; j < ctour_len; j++)
+        for (struct Bezier b : c.curves)
         {
-            struct Vertex vx = current.vertices[j];
-
-            if (vx.vxtype == VxType::off_curve)
-            {
-                continue;
-            }
-
-            sf::Vector2f vx_window = convert_coordinate(vx.x_coord, vx.y_coord, window);
-
-            struct Vertex next = current.vertices[(j + 1) % (ctour_len)];
-
-            sf::Vector2f next_window = convert_coordinate(next.x_coord, next.y_coord, window);
-
-            if (next.vxtype == VxType::off_curve)
-            {
-                // use 3 pts to draw bezier
-                struct Vertex end = current.vertices[(j + 2) % (ctour_len)];
-
-                sf::Vector2f end_window = convert_coordinate(end.x_coord, end.y_coord, window);
-
-                sf::VertexArray bezier = get_bezier_indices(vx_window, next_window, end_window);
-                window->draw(bezier);
-            }
-            else
-            {
-
-                // draw line
-                sf::Vertex line[] =
-                    {
-                        sf::Vertex(vx_window),
-                        sf::Vertex(next_window)};
-
-                window->draw(line, 2, sf::Lines);
-            }
+            draw_bezier(b, window);
         }
     }
 }
@@ -200,10 +165,10 @@ void Font::show_points(sf::RenderWindow *window, uint32_t char_code, bool color_
         {
             struct Vertex vx = current.vertices[j];
 
-            sf::Vector2f window_coords = convert_coordinate(vx.x_coord, vx.y_coord, window);
+            sf::Vector2f window_coords = convert_coordinate(vx.x, vx.y, window);
 
-            assert(vx.x_coord >= this->xmin && vx.x_coord <= this->xmax);
-            assert(vx.y_coord >= this->ymin && vx.y_coord <= this->ymax);
+            assert(vx.x >= this->xmin && vx.x <= this->xmax);
+            assert(vx.y >= this->ymin && vx.y <= this->ymax);
 
             sf::Text text;
             text.setFont(font);

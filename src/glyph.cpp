@@ -13,7 +13,6 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     assert(this->xmin <= this->xmax);
     assert(this->ymin <= this->ymax);
     this->contour_ends = std::vector<uint16_t>();
-    this->vertices = std::vector<Vertex>();
     this->contours = std::vector<Contour>();
     this->flags = std::vector<uint8_t>();
 }
@@ -39,14 +38,14 @@ bool is_clockwise(const std::vector<Vertex> vxs)
     for (int i = 0; i < num_vxs; i++)
     {
         struct Vertex vx = vxs[i];
-        if (vx.y_coord < lowest.y_coord)
+        if (vx.y < lowest.y)
         {
             lowest = vx;
             lowest_idx = i;
         }
-        else if (vx.y_coord == lowest.y_coord)
+        else if (vx.y == lowest.y)
         {
-            if (vx.x_coord > lowest.x_coord)
+            if (vx.x > lowest.x)
             {
                 lowest = vx;
                 lowest_idx = i;
@@ -59,7 +58,7 @@ bool is_clockwise(const std::vector<Vertex> vxs)
     struct Vertex prev = vxs[prev_vx_idx];
     struct Vertex next = vxs[next_vx_idx];
 
-    int cross = (prev.x_coord - lowest.x_coord) * (next.y_coord - lowest.y_coord) - (prev.y_coord - lowest.y_coord) * (next.x_coord - lowest.x_coord);
+    int cross = (prev.x - lowest.x) * (next.y - lowest.y) - (prev.y - lowest.y) * (next.x - lowest.x);
 
     return cross > 0;
 }
@@ -119,12 +118,12 @@ void Glyph::read_simple_glyph(FontFile *f)
         // Otherwise, the corresponding x - coordinate is 2 bytes long
 
         int16_t last_x_value = x_coords.back();
-        int16_t x_coord = 0;
+        int16_t x = 0;
         if (x_is_byte)
         {
-            x_coord = (*f).read_byte();                // implicit cast
+            x = (*f).read_byte();                      // implicit cast
             int x_sign = is_bit_set(flag, 4) ? 1 : -1; // this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative
-            x_coord *= x_sign;
+            x *= x_sign;
         }
         else
         {
@@ -133,11 +132,11 @@ void Glyph::read_simple_glyph(FontFile *f)
             // if this bit is not set, the current x-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in x
             if (!x_is_same)
             {
-                x_coord = (*f).read_16_signed();
+                x = (*f).read_16_signed();
             }
         }
 
-        x_coords.push_back(last_x_value + x_coord);
+        x_coords.push_back(last_x_value + x);
     }
     // y coords
     for (uint8_t flag : flags)
@@ -147,12 +146,12 @@ void Glyph::read_simple_glyph(FontFile *f)
         // Otherwise, the corresponding y - coordinate is 2 bytes long
 
         int16_t last_y_value = y_coords.back();
-        int16_t y_coord = 0;
+        int16_t y = 0;
         if (y_is_byte)
         {
-            y_coord = (*f).read_byte();                // implicit cast
+            y = (*f).read_byte();                      // implicit cast
             int y_sign = is_bit_set(flag, 5) ? 1 : -1; // this bit describes the sign of the value, with a value of 1 equalling positive and a zero value negative
-            y_coord *= y_sign;
+            y *= y_sign;
         }
         else
         {
@@ -161,75 +160,101 @@ void Glyph::read_simple_glyph(FontFile *f)
             // if this bit is not set, the current y-coordinate is a signed 16-bit delta vector. In this case, the delta vector is the change in y
             if (!y_is_same)
             {
-                y_coord = (*f).read_16_signed();
+                y = (*f).read_16_signed();
             }
         }
 
-        y_coords.push_back(last_y_value + y_coord);
+        y_coords.push_back(last_y_value + y);
     }
 
     assert(x_coords.size() == unsigned(this->num_vertices + 1));
     assert(y_coords.size() == unsigned(this->num_vertices + 1));
-    for (int i = 1; i < this->num_vertices + 1; i++)
-    {
-        uint8_t flag = flags[i - 1];
-        bool on_curve = flag & 1;
-        struct Vertex vx;
-        vx.x_coord = x_coords[i];
-        vx.y_coord = y_coords[i];
-        vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
-        vertices.push_back(vx);
 
-        bool x_short = is_bit_set(flag, 1);
-        bool y_short = is_bit_set(flag, 2);
-        bool x_sign = x_short ? (is_bit_set(flag, 4)) : x_coords[i] > 0;
-        bool y_sign = y_short ? (is_bit_set(flag, 5)) : y_coords[i] > 0;
-    }
-
-    int prev_ctour_end = -1;
-    int ctour_end = contour_ends[0];
-    for (int ctour = 0; ctour < num_contours; ctour++)
+    int prev_contour_end = -1;
+    int contour_end = contour_ends[0];
+    for (int contour = 0; contour < num_contours; contour++)
     {
-        ctour_end = contour_ends[ctour];
+        contour_end = contour_ends[contour];
 
         struct Contour c;
-        c.vertices = std::vector<Vertex>();
-        for (int vx_idx = prev_ctour_end + 1; vx_idx <= ctour_end; vx_idx++)
+        std::vector<Vertex> contour_vertices = std::vector<Vertex>();
+        for (int vx_idx = prev_contour_end + 1; vx_idx <= contour_end; vx_idx++)
         {
-            if ((vx_idx) >= vertices.size())
-            {
-                assert(false);
-            }
-            struct Vertex vx = vertices[vx_idx];
-            c.vertices.push_back(vx);
+            assert(vx_idx < this->num_vertices);
+            uint8_t flag = flags[vx_idx - 1];
+            bool on_curve = flag & 1;
+            struct Vertex vx;
+            vx.x = x_coords[vx_idx];
+            vx.y = y_coords[vx_idx];
+            vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
+            contour_vertices.push_back(vx);
         }
 
         //
-        // assert(c.vertices.size() == ctour_end + 1);
+        assert(contour_vertices.size() == contour_end + 1);
 
-        c.is_clockwise = is_clockwise(c.vertices);
+        c.is_clockwise = is_clockwise(contour_vertices);
 
         // add missing vxs on curve btwn off curve pts
 
-        for (int i = 0; i < c.vertices.size(); i++)
+        for (int i = 0; i < contour_vertices.size(); i++)
         {
-            struct Vertex current = c.vertices[i];
-            int next_idx = (i + 1 == c.vertices.size()) ? 0 : (i + 1);
+            struct Vertex current = contour_vertices[i];
+            int next_idx = (i + 1 == contour_vertices.size()) ? 0 : (i + 1);
 
-            struct Vertex next = c.vertices[next_idx];
+            struct Vertex next = contour_vertices[next_idx];
             if (current.vxtype == off_curve && next.vxtype == off_curve)
             {
                 struct Vertex midpoint;
-                midpoint.x_coord = (current.x_coord + next.x_coord) / 2;
-                midpoint.y_coord = (current.y_coord + next.y_coord) / 2;
+                midpoint.x = (current.x + next.x) / 2;
+                midpoint.y = (current.y + next.y) / 2;
 
                 midpoint.vxtype = VxType::hidden;
-                c.vertices.insert(c.vertices.begin() + i + 1, midpoint);
+                contour_vertices.insert(contour_vertices.begin() + i + 1, midpoint);
             }
         }
 
         contours.push_back(c);
 
-        prev_ctour_end = ctour_end;
+        int vx_idx = 0;
+
+        // here we take vertices and combine them into bezier splines, containing 2 or 3 pts
+        // im not sure if it is allowed by the specification for a contour to begin with an off point curve
+        // but if it isn't its still possible some fonts are broken and do it anyways
+        // so ill put this in as a safety, we go to the first point on the curve
+        while (contour_vertices[vx_idx].vxtype == off_curve)
+        {
+            vx_idx++;
+        }
+
+        while (vx_idx <= contour_end)
+        {
+            // we split the vertices into segments of 2 or 3 (with overlap for endpoints)
+            assert(contour_vertices[vx_idx].vxtype != off_curve);
+            int next_idx = (vx_idx + 1) % contour_vertices.size();
+
+            struct Bezier b;
+            b.start = contour_vertices[vx_idx];
+            vx_idx = next_idx;
+
+            if (contour_vertices[next_idx].vxtype != off_curve)
+            {
+                b.is_curve = false;
+                b.end = contour_vertices[vx_idx];
+            }
+            else
+            {
+                b.is_curve = true;
+                b.control = contour_vertices[vx_idx];
+
+                next_idx = (vx_idx + 1) % contour_vertices.size();
+                assert(contour_vertices[next_idx].vxtype != off_curve);
+                b.end = contour_vertices[next_idx];
+                vx_idx = next_idx;
+            }
+            c.curves.push_back(b);
+        }
+
+        prev_contour_end = contour_end;
     }
 }
