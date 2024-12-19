@@ -114,114 +114,26 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);
 
-    int prev_ctour_end = -1;
-
+    assert(g.contours.size() > 0);
     for (struct Contour c : g.contours)
     {
-
-        //
+        assert(c.curves.size() > 0);
         for (struct Bezier b : c.curves)
         {
-            draw_bezier(b, window);
-        }
-    }
-}
 
-void Font::show_points(sf::RenderWindow *window, uint32_t char_code, bool color_contours)
-{
-    show_bbox(window, char_code);
-    sf::Font font;
-    if (!font.loadFromFile(this->file_path))
-    {
-        assert(false);
-    }
-
-    Glyph g = get_glyph_outline(char_code);
-
-    sf::Vector2f char_top_left = convert_coordinate(g.xmin, g.ymin, window);
-
-    sf::Vector2f char_bottom_right = convert_coordinate(g.xmax, g.ymax, window);
-
-    sf::Vector2f char_bbox_size = char_bottom_right - char_top_left;
-
-    sf::RectangleShape char_bbox(char_bbox_size - 3.f * sf::Vector2f(-TEXT_SIZE, TEXT_SIZE));
-    char_bbox.setPosition(char_top_left.x - TEXT_SIZE, char_top_left.y + 2.f * TEXT_SIZE);
-
-    // lazy way of adding padding
-
-    char_bbox.setFillColor(CHAR_BBOX_COLOR);
-    window->draw(char_bbox);
-
-    int prev_ctour_end = -1;
-
-    //
-
-    for (int i = 0; i < g.contours.size(); i++)
-    {
-        struct Contour current = g.contours[i];
-        int ctour_end = g.contour_ends[i];
-        //
-        for (int j = 0; j < current.vertices.size(); j++)
-        {
-            struct Vertex vx = current.vertices[j];
-
-            sf::Vector2f window_coords = convert_coordinate(vx.x, vx.y, window);
-
-            assert(vx.x >= this->xmin && vx.x <= this->xmax);
-            assert(vx.y >= this->ymin && vx.y <= this->ymax);
-
-            sf::Text text;
-            text.setFont(font);
-
-            text.setString(std::to_string(j));
-            text.setCharacterSize(TEXT_SIZE);
-
-            sf::Color text_color;
-
-            if (color_contours)
+            if (b.is_curve)
             {
-                text_color = contour_colors[i % 9];
+                // sf::VertexArray pts = get_outline(b);
             }
             else
             {
-                if (current.is_clockwise)
-                {
-                    switch (vx.vxtype)
-                    {
-                    case VxType::on_curve:
-                        text_color = sf::Color::Red;
-                        break;
-                    case VxType::off_curve:
-                        text_color = sf::Color::Green;
-                        break;
-                    case VxType::hidden:
-                        text_color = sf::Color::Blue;
-                        break;
-                    }
-                }
-                else
-                {
-                    switch (vx.vxtype)
-                    {
-                    case VxType::on_curve:
-                        text_color = sf::Color::Magenta;
-                        break;
-                    case VxType::off_curve:
-                        text_color = sf::Color::Yellow;
-                        break;
-                    case VxType::hidden:
-                        text_color = sf::Color::Cyan;
-                        break;
-                    }
-                }
+                sf::Vertex start_pt = sf::Vertex(convert_coordinate(b.start.x, b.start.y, window));
+                sf::Vertex end_pt = sf::Vertex(convert_coordinate(b.end.x, b.end.y, window));
+                sf::Vertex line[] = {sf::Vertex(start_pt),
+                                     sf::Vertex(end_pt)};
+
+                window->draw(line, 2, sf::Lines);
             }
-
-            text.setFillColor(text_color);
-
-            text.setPosition(window_coords);
-            window->draw(text);
         }
-
-        prev_ctour_end = ctour_end;
     }
 }

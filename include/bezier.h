@@ -30,4 +30,4 @@ struct Bezier
 bool is_intersecting(struct Bezier b, int32_t x_value);
 // not anti-aliased
 
-void draw_outline(struct Bezier b, sf::RenderWindow *window);
+std::vector<struct Vertex> get_outline(struct Bezier b);

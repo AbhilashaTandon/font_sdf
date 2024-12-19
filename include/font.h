@@ -52,7 +52,7 @@ private:
     std::unordered_map<std::string, uint32_t> table_offsets;
     std::unordered_map<std::string, uint32_t> table_lengths;
 
-    std::unordered_map<uint16_t, Glyph> glyphs; // map from char codes to glyphs
+    std::unordered_map<uint32_t, Glyph> glyphs; // map from char codes to glyphs
 
     bool long_glyph_offsets;
     // whether glyph offsets in loca table are 2 bytes (false) or 4 bytes (true)

@@ -135,7 +135,18 @@ Glyph Font::get_glyph_outline(uint32_t unicode_value)
     {
         throw std::runtime_error("Glyph not found in file");
     }
-    Glyph g = Glyph(&file, this->table_offsets["glyf"] + get_glyph_offset(unicode_value));
-    g.read_glyph(&file);
-    return g;
+
+    auto glyph_loc = glyphs.find(unicode_value);
+
+    if (glyph_loc == glyphs.end())
+    {
+        Glyph g = Glyph(&file, this->table_offsets["glyf"] + get_glyph_offset(unicode_value));
+        g.read_glyph(&file);
+        glyphs.insert({unicode_value, g});
+        return g;
+    }
+    else
+    {
+        return glyph_loc->second;
+    }
 }

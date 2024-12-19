@@ -181,23 +181,20 @@ void Glyph::read_simple_glyph(FontFile *f)
         for (int vx_idx = prev_contour_end + 1; vx_idx <= contour_end; vx_idx++)
         {
             assert(vx_idx < this->num_vertices);
-            uint8_t flag = flags[vx_idx - 1];
+            uint8_t flag = flags[vx_idx];
             bool on_curve = flag & 1;
             struct Vertex vx;
-            vx.x = x_coords[vx_idx];
-            vx.y = y_coords[vx_idx];
+            vx.x = x_coords[vx_idx + 1];
+            vx.y = y_coords[vx_idx + 1];
             vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
             contour_vertices.push_back(vx);
         }
-
-        //
-        assert(contour_vertices.size() == contour_end + 1);
 
         c.is_clockwise = is_clockwise(contour_vertices);
 
         // add missing vxs on curve btwn off curve pts
 
-        for (int i = 0; i < contour_vertices.size(); i++)
+        for (unsigned int i = 0; i < contour_vertices.size(); i++)
         {
             struct Vertex current = contour_vertices[i];
             int next_idx = (i + 1 == contour_vertices.size()) ? 0 : (i + 1);
@@ -214,8 +211,6 @@ void Glyph::read_simple_glyph(FontFile *f)
             }
         }
 
-        contours.push_back(c);
-
         int vx_idx = 0;
 
         // here we take vertices and combine them into bezier splines, containing 2 or 3 pts
@@ -227,19 +222,22 @@ void Glyph::read_simple_glyph(FontFile *f)
             vx_idx++;
         }
 
-        while (vx_idx <= contour_end)
+        int num_contour_vertices = contour_vertices.size();
+        int first_vx = vx_idx;
+
+        do
         {
             // we split the vertices into segments of 2 or 3 (with overlap for endpoints)
             assert(contour_vertices[vx_idx].vxtype != off_curve);
-            int next_idx = (vx_idx + 1) % contour_vertices.size();
 
             struct Bezier b;
             b.start = contour_vertices[vx_idx];
-            vx_idx = next_idx;
+            vx_idx = ((vx_idx + 1) % num_contour_vertices);
 
-            if (contour_vertices[next_idx].vxtype != off_curve)
+            if (contour_vertices[vx_idx].vxtype != off_curve)
             {
                 b.is_curve = false;
+                b.control = b.start;
                 b.end = contour_vertices[vx_idx];
             }
             else
@@ -247,13 +245,14 @@ void Glyph::read_simple_glyph(FontFile *f)
                 b.is_curve = true;
                 b.control = contour_vertices[vx_idx];
 
-                next_idx = (vx_idx + 1) % contour_vertices.size();
-                assert(contour_vertices[next_idx].vxtype != off_curve);
-                b.end = contour_vertices[next_idx];
-                vx_idx = next_idx;
+                vx_idx = ((vx_idx + 1) % num_contour_vertices);
+
+                b.end = contour_vertices[vx_idx];
             }
             c.curves.push_back(b);
-        }
+        } while (vx_idx != first_vx);
+
+        this->contours.push_back(c);
 
         prev_contour_end = contour_end;
     }
