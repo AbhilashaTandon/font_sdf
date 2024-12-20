@@ -8,15 +8,24 @@
 
 int main()
 {
-    // Font f = Font("/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf");
-    Font f = Font("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf");
+    // Font f = Font();
+    std::string file_name = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+    file_name = "/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf";
+    Font f = Font(file_name);
     sf::RenderWindow window(sf::VideoMode(1600, 800), "SFML works!");
 
-    uint32_t ascii_code = 0;
-
-    while (f.get_glyph_offset(ascii_code) == -1)
+    sf::Font font;
+    if (!font.loadFromFile(file_name))
     {
-        ascii_code++;
+        return 1;
+        // lazy error handling
+    }
+
+    uint32_t unicode_value = 33;
+
+    while (f.get_glyph_offset(unicode_value) == -1)
+    {
+        unicode_value++;
     }
 
     bool color_contours = false;
@@ -38,19 +47,19 @@ int main()
                 }
                 else if (event.key.scancode == sf::Keyboard::Scan::Right)
                 {
-                    ascii_code++;
+                    unicode_value++;
 
-                    while (f.get_glyph_offset(ascii_code) == -1)
+                    while (f.get_glyph_offset(unicode_value) == -1)
                     {
-                        ascii_code++;
+                        unicode_value++;
                     }
                 }
                 else if (event.key.scancode == sf::Keyboard::Scan::Left)
                 {
-                    ascii_code--;
-                    while (f.get_glyph_offset(ascii_code) == -1)
+                    unicode_value--;
+                    while (f.get_glyph_offset(unicode_value) == -1)
                     {
-                        ascii_code--;
+                        unicode_value--;
                     }
                 }
 
@@ -60,9 +69,24 @@ int main()
                 }
             }
         }
-        window.clear();
+        window.clear(sf::Color(64, 48, 32));
 
-        f.show_glyph(&window, ascii_code);
+        f.show_glyph(&window, unicode_value);
+
+        sf::Text unicode_value_display;
+
+        unicode_value_display.setFont(font);
+
+        unicode_value_display.setFillColor(sf::Color::White);
+
+        unicode_value_display.setString(std::to_string(unicode_value));
+
+        unicode_value_display.setCharacterSize(24);
+
+        unicode_value_display.setPosition(30, 30);
+
+        window.draw(unicode_value_display);
+
         window.display();
     }
 

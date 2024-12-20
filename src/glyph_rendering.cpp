@@ -1,7 +1,7 @@
 #include <cassert>
 #include "font.h"
 #include "bezier.h"
-#define PADDING 0.f
+#define PADDING 64.f
 #define TEXT_SIZE 16
 #define BBOX_COLOR sf::Color(32, 32, 32)
 #define CHAR_BBOX_COLOR sf::Color(64, 64, 64)
@@ -17,7 +17,7 @@ const sf::Color contour_colors[9] = {
     sf::Color(0, 150, 0),
     sf::Color(45, 93, 158)};
 
-sf::Vector2f Font::convert_coordinate(int16_t x, int16_t y, const sf::RenderWindow *window) const
+sf::Vector2f Font::convert_coordinate(sf::Vector2f vec, const sf::RenderWindow *window) const
 {
     // converts coordinates in em space (font) to pixel space (window)
 
@@ -41,8 +41,8 @@ sf::Vector2f Font::convert_coordinate(int16_t x, int16_t y, const sf::RenderWind
 
     assert(scale_factor > 0);
 
-    int window_x = ((x - this->xmin) * scale_factor + PADDING);
-    int window_y = view_height + PADDING - ((y - this->ymin) * scale_factor + PADDING);
+    int window_x = ((vec.x - this->xmin) * scale_factor + PADDING);
+    int window_y = view_height + PADDING - ((vec.y - this->ymin) * scale_factor + PADDING);
 
     //
 
@@ -55,12 +55,21 @@ sf::Vector2f Font::convert_coordinate(int16_t x, int16_t y, const sf::RenderWind
     return sf::Vector2f(window_x, window_y);
 }
 
+sf::VertexArray Font::convert_vertices(sf::VertexArray &va, const sf::RenderWindow *window) const
+{
+    for (size_t i = 0; i < va.getVertexCount(); i++)
+    {
+        va[i].position = convert_coordinate(va[i].position, window);
+    }
+    return va;
+}
+
 void Font::show_bbox(sf::RenderWindow *window, uint32_t char_code)
 {
 
     sf::Vector2u window_size = window->getSize();
-    sf::Vector2f top_left = convert_coordinate(this->xmin, this->ymin, window);
-    sf::Vector2f bottom_right = convert_coordinate(this->xmax, this->ymax, window);
+    sf::Vector2f top_left = convert_coordinate(sf::Vector2f(this->xmin, this->ymin), window);
+    sf::Vector2f bottom_right = convert_coordinate(sf::Vector2f(this->xmax, this->ymax), window);
 
     sf::Vector2f bbox_size = bottom_right - top_left;
 
@@ -79,19 +88,19 @@ void Font::show_bbox(sf::RenderWindow *window, uint32_t char_code)
 void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
 {
 
-    show_bbox(window, char_code);
+    // show_bbox(window, char_code);
     Glyph g = get_glyph_outline(char_code);
 
-    sf::Vector2f char_top_left = convert_coordinate(g.xmin, g.ymin, window);
+    sf::Vector2f char_top_left = convert_coordinate(sf::Vector2f(g.xmin, g.ymin), window);
 
-    sf::Vector2f char_bottom_right = convert_coordinate(g.xmax, g.ymax, window);
+    sf::Vector2f char_bottom_right = convert_coordinate(sf::Vector2f(g.xmax, g.ymax), window);
 
     sf::Vector2f char_bbox_size = char_bottom_right - char_top_left;
 
     sf::RectangleShape char_bbox(char_bbox_size - 3.f * sf::Vector2f(-TEXT_SIZE, TEXT_SIZE));
     char_bbox.setPosition(char_top_left.x - TEXT_SIZE, char_top_left.y + 2.f * TEXT_SIZE);
 
-    // lazy way of adding padding
+    // // lazy way of adding padding
 
     char_bbox.setFillColor(CHAR_BBOX_COLOR);
     window->draw(char_bbox);
@@ -109,7 +118,7 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
     std::string unicode_char = "";
     unicode_char += (char(char_code));
     ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(PADDING * 2, PADDING * 2));
+    ref_glyph.setPosition(sf::Vector2f(0, 0));
     ref_glyph.setCharacterSize(int(500));
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);
@@ -120,20 +129,9 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
         assert(c.curves.size() > 0);
         for (struct Bezier b : c.curves)
         {
-
-            if (b.is_curve)
-            {
-                // sf::VertexArray pts = get_outline(b);
-            }
-            else
-            {
-                sf::Vertex start_pt = sf::Vertex(convert_coordinate(b.start.x, b.start.y, window));
-                sf::Vertex end_pt = sf::Vertex(convert_coordinate(b.end.x, b.end.y, window));
-                sf::Vertex line[] = {sf::Vertex(start_pt),
-                                     sf::Vertex(end_pt)};
-
-                window->draw(line, 2, sf::Lines);
-            }
+            sf::VertexArray pts = get_outline(b);
+            convert_vertices(pts, window);
+            window->draw(pts);
         }
     }
 }

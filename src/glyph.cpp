@@ -12,6 +12,7 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     this->ymax = (*f).read_16_signed();
     assert(this->xmin <= this->xmax);
     assert(this->ymin <= this->ymax);
+    // these assertions will fail for certain whitespace characters
     this->contour_ends = std::vector<uint16_t>();
     this->contours = std::vector<Contour>();
     this->flags = std::vector<uint8_t>();

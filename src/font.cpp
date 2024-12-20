@@ -130,23 +130,27 @@ int Font::get_glyph_offset(uint32_t unicode_value) const
 
 Glyph Font::get_glyph_outline(uint32_t unicode_value)
 {
-    int offset = get_glyph_offset(unicode_value);
-    if (offset == -1)
-    {
-        throw std::runtime_error("Glyph not found in file");
-    }
-
     auto glyph_loc = glyphs.find(unicode_value);
 
     if (glyph_loc == glyphs.end())
+    // if not cached yet
     {
-        Glyph g = Glyph(&file, this->table_offsets["glyf"] + get_glyph_offset(unicode_value));
+        int offset = get_glyph_offset(unicode_value);
+        printf("cache miss: %d %d\n", unicode_value, offset);
+        if (offset == -1)
+        {
+            throw std::runtime_error("Glyph not found in file");
+        }
+        Glyph g = Glyph(&file, this->table_offsets["glyf"] + offset);
+
         g.read_glyph(&file);
         glyphs.insert({unicode_value, g});
         return g;
     }
     else
     {
+
+        printf("cache hit: %d %d\n", unicode_value, glyph_loc->first);
         return glyph_loc->second;
     }
 }

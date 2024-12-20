@@ -41,7 +41,8 @@ public:
     void show_glyph(sf::RenderWindow *window, uint32_t char_code);
     void show_points(sf::RenderWindow *window, uint32_t char_code, bool color_contours);
 
-    sf::Vector2f convert_coordinate(int16_t x, int16_t y, const sf::RenderWindow *window) const;
+    sf::Vector2f convert_coordinate(sf::Vector2f vec, const sf::RenderWindow *window) const;
+    sf::VertexArray convert_vertices(sf::VertexArray &va, const sf::RenderWindow *window) const;
 
 private:
     FontFile file;
