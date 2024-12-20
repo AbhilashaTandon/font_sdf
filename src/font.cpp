@@ -118,12 +118,15 @@ int Font::get_glyph_offset(uint32_t unicode_value) const
     for (unsigned int i = 0; i < cmap_ranges.size(); i++)
     {
         struct cmap_range range = cmap_ranges[i];
-        if (range.first_char_code > unicode_value)
+        if (range.first_char_code <= unicode_value && range.last_char_code >= unicode_value)
         {
-            continue;
+            uint32_t glyph_id = range.start_glyph_id + (unicode_value - range.first_char_code);
+            return (glyph_id < glyph_offsets.size()) ? glyph_offsets[glyph_id] : -1;
         }
-        uint32_t glyph_id = range.start_glyph_id + (unicode_value - range.first_char_code);
-        return (glyph_id < glyph_offsets.size()) ? glyph_offsets[glyph_id] : -1;
+        else if (range.first_char_code > unicode_value)
+        {
+            return -1;
+        }
     }
     return -1;
 }
@@ -133,10 +136,9 @@ Glyph Font::get_glyph_outline(uint32_t unicode_value)
     auto glyph_loc = glyphs.find(unicode_value);
 
     if (glyph_loc == glyphs.end())
-    // if not cached yet
+    // cache miss
     {
         int offset = get_glyph_offset(unicode_value);
-        printf("cache miss: %d %d\n", unicode_value, offset);
         if (offset == -1)
         {
             throw std::runtime_error("Glyph not found in file");
@@ -148,9 +150,9 @@ Glyph Font::get_glyph_outline(uint32_t unicode_value)
         return g;
     }
     else
+    // cache hit
     {
 
-        printf("cache hit: %d %d\n", unicode_value, glyph_loc->first);
         return glyph_loc->second;
     }
 }

@@ -118,8 +118,8 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
     std::string unicode_char = "";
     unicode_char += (char(char_code));
     ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(0, 0));
-    ref_glyph.setCharacterSize(int(500));
+    ref_glyph.setPosition(sf::Vector2f(0, 84));
+    ref_glyph.setCharacterSize(int(410));
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);
 
