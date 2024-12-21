@@ -6,6 +6,7 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     (*f).jump_to(start_idx);
     this->num_contours = (*f).read_16_signed();
     this->compound_glyph = num_contours < 0;
+    this->num_contours = compound_glyph ? 0 : num_contours;
     this->xmin = (*f).read_16_signed();
     this->ymin = (*f).read_16_signed();
     this->xmax = (*f).read_16_signed();
@@ -16,6 +17,8 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx)
     this->contour_ends = std::vector<uint16_t>();
     this->contours = std::vector<Contour>();
     this->flags = std::vector<uint8_t>();
+    this->num_curves = 0;
+    this->num_vertices = 0;
 }
 
 void Glyph::read_compound_glyph(FontFile *f)
@@ -29,6 +32,7 @@ bool is_bit_set(uint8_t byte, uint8_t bit_idx)
 
 // https://stackoverflow.com/a/1180256
 // Find the vertex with smallest y (and largest x if there are ties). Let the vertex be A and the previous vertex in the list be B and the next vertex in the list be C. Now compute the sign of the cross product of AB and AC.
+// the direction of the points in the contour nominally represents in a font whether its an inner or outer edge, but many fonts don't adhere to this
 bool is_clockwise(const std::vector<Vertex> vxs)
 {
     struct Vertex lowest = vxs[0];
@@ -251,6 +255,9 @@ void Glyph::read_simple_glyph(FontFile *f)
                 b.end = contour_vertices[vx_idx];
             }
             c.curves.push_back(b);
+
+            this->num_curves++;
+
         } while (vx_idx != first_vx);
 
         this->contours.push_back(c);

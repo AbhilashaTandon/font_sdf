@@ -11,8 +11,8 @@ enum VxType
 };
 struct Vertex
 {
-    int32_t x;
-    int32_t y;
+    int16_t x;
+    int16_t y;
     VxType vxtype;
 };
 
@@ -26,8 +26,5 @@ struct Bezier
 
 // TODO: make bezier class w 2 or 3 vertices, move the above struct and enum to bezier.h
 // change contour to list of beziers
-
-bool is_intersecting(struct Bezier b, int32_t x_value);
-// not anti-aliased
 
 sf::VertexArray get_outline(struct Bezier b);

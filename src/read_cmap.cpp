@@ -55,7 +55,7 @@ std::vector<cmap_range> read_format_12(FontFile *f)
 
     std::vector<cmap_range> ranges = std::vector<cmap_range>();
 
-    for (int i = 0; i < num_groups; i++)
+    for (unsigned int i = 0; i < num_groups; i++)
     {
         uint32_t first_char_code = (*f).read_32();
         uint32_t last_char_code = (*f).read_32();

@@ -42,6 +42,7 @@ private:
     int16_t ymax;
     std::vector<uint8_t> flags;
     uint16_t num_vertices;
+    uint16_t num_curves;
     std::vector<uint16_t> contour_ends; /// len is num_contours
     std::vector<Contour> contours;
 };

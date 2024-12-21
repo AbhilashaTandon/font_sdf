@@ -37,8 +37,12 @@ public:
 
     Glyph get_glyph_outline(uint32_t unicode_value);
 
-    void show_bbox(sf::RenderWindow *window, uint32_t char_code);
-    void show_glyph(sf::RenderWindow *window, uint32_t char_code);
+    // display methods
+    void show_bbox(sf::RenderWindow *window, Glyph g);
+    void show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Shader *shader);
+    void display_char_code(sf::RenderWindow *window, uint32_t char_code);
+    void draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code);
+    void render_glyph(sf::RenderWindow *window, Glyph g, sf::Shader *shader);
     void show_points(sf::RenderWindow *window, uint32_t char_code, bool color_contours);
 
     sf::Vector2f convert_coordinate(sf::Vector2f vec, const sf::RenderWindow *window) const;

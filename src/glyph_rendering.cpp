@@ -44,8 +44,6 @@ sf::Vector2f Font::convert_coordinate(sf::Vector2f vec, const sf::RenderWindow *
     int window_x = ((vec.x - this->xmin) * scale_factor + PADDING);
     int window_y = view_height + PADDING - ((vec.y - this->ymin) * scale_factor + PADDING);
 
-    //
-
     assert(window_x >= PADDING);
     assert(window_y >= PADDING);
     assert(window_x <= window_size.x - PADDING);
@@ -64,33 +62,8 @@ sf::VertexArray Font::convert_vertices(sf::VertexArray &va, const sf::RenderWind
     return va;
 }
 
-void Font::show_bbox(sf::RenderWindow *window, uint32_t char_code)
+void Font::show_bbox(sf::RenderWindow *window, Glyph g)
 {
-
-    sf::Vector2u window_size = window->getSize();
-    sf::Vector2f top_left = convert_coordinate(sf::Vector2f(this->xmin, this->ymin), window);
-    sf::Vector2f bottom_right = convert_coordinate(sf::Vector2f(this->xmax, this->ymax), window);
-
-    sf::Vector2f bbox_size = bottom_right - top_left;
-
-    sf::RectangleShape bbox(bbox_size);
-
-    assert(top_left.x >= PADDING);
-    assert(top_left.y >= PADDING);
-    assert(bottom_right.x <= float(window_size.x) - PADDING);
-    assert(bottom_right.y <= float(window_size.y) - PADDING);
-
-    bbox.setPosition(top_left.x, top_left.y);
-    bbox.setFillColor(BBOX_COLOR);
-    window->draw(bbox);
-}
-
-void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
-{
-
-    // show_bbox(window, char_code);
-    Glyph g = get_glyph_outline(char_code);
-
     sf::Vector2f char_top_left = convert_coordinate(sf::Vector2f(g.xmin, g.ymin), window);
 
     sf::Vector2f char_bottom_right = convert_coordinate(sf::Vector2f(g.xmax, g.ymax), window);
@@ -104,25 +77,15 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
 
     char_bbox.setFillColor(CHAR_BBOX_COLOR);
     window->draw(char_bbox);
+}
 
-    sf::Font font;
-    if (!font.loadFromFile(this->file_path))
-    {
-        assert(false);
-    }
+void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Shader *shader)
+{
 
-    sf::Text ref_glyph;
-    sf::Font current_font;
-    current_font.loadFromFile(this->file_path);
-    ref_glyph.setFont(current_font);
-    std::string unicode_char = "";
-    unicode_char += (char(char_code));
-    ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(0, 84));
-    ref_glyph.setCharacterSize(int(410));
-    ref_glyph.setFillColor(sf::Color::White);
-    window->draw(ref_glyph);
+    Glyph g = get_glyph_outline(char_code);
 
+    show_bbox(window, g);
+    draw_ref_glyph(window, char_code); // uses the builtin sfml render to compare to ours
     assert(g.contours.size() > 0);
     for (struct Contour c : g.contours)
     {
@@ -134,4 +97,114 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code)
             window->draw(pts);
         }
     }
+
+    display_char_code(window, char_code);
+
+    render_glyph(window, g, shader);
+}
+
+void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Shader *shader)
+{
+    sf::Uint8 *vertices = new sf::Uint8[g.num_curves * 3 * 4]; // * 4 because pixels have 4 components (RGBA)
+    // the r and g components are used for the higher and lower bytes of the x coordinate respectively
+    // and likewise for b and a for the y coordinate
+
+    int idx = 0;
+
+    for (struct Contour contour : g.contours)
+    {
+        for (struct Bezier bezier : contour.curves)
+        {
+            vertices[idx++] = ((bezier.start.x) & 0xff00) >> 8;
+            // higher order byte of x coord
+            vertices[idx++] = (bezier.start.x) & 0x00ff;
+            // lower order byte of x coord
+            vertices[idx++] = ((bezier.start.y) & 0xff00) >> 8;
+            // higher order byte of y coord
+            vertices[idx++] = (bezier.start.y) & 0x00ff;
+            // lower order byte of y coord
+
+            vertices[idx++] = ((bezier.control.x) & 0xff00) >> 8;
+            // higher order byte of x coord
+            vertices[idx++] = (bezier.control.x) & 0x00ff;
+            // lower order byte of x coord
+            vertices[idx++] = ((bezier.control.y) & 0xff00) >> 8;
+            // higher order byte of y coord
+            vertices[idx++] = (bezier.control.y) & 0x00ff;
+            // lower order byte of y coord
+
+            vertices[idx++] = ((bezier.end.x) & 0xff00) >> 8;
+            // higher order byte of x coord
+            vertices[idx++] = (bezier.end.x) & 0x00ff;
+            // lower order byte of x coord
+            vertices[idx++] = ((bezier.end.y) & 0xff00) >> 8;
+            // higher order byte of y coord
+            vertices[idx++] = (bezier.end.y) & 0x00ff;
+            // lower order byte of y coord
+        }
+    }
+
+    sf::Texture curves;
+
+    if (!curves.create(g.num_curves * 3, 1))
+    {
+        // error..
+    }
+
+    curves.setRepeated(false);
+
+    curves.update(vertices);
+
+    shader->setUniform("beziers", curves);
+
+    shader->setUniform("num_curves", (int)g.num_curves);
+
+    sf::RectangleShape filled_in_glyph;
+    filled_in_glyph.setPosition(sf::Vector2f(1200, 185));
+    filled_in_glyph.setSize(sf::Vector2f((g.xmax - g.xmin), g.ymax - g.ymin));
+    filled_in_glyph.setFillColor(sf::Color::White);
+
+    shader->setUniform("resolution", sf::Vector2f(filled_in_glyph.getSize().x, filled_in_glyph.getSize().y));
+    shader->setUniform("position", sf::Vector2f(filled_in_glyph.getPosition().x, filled_in_glyph.getPosition().y));
+    shader->setUniform("window_size", sf::Vector2f(window->getSize()));
+
+    window->draw(filled_in_glyph, shader);
+}
+
+void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code)
+{
+    sf::Text ref_glyph;
+    sf::Font current_font;
+    current_font.loadFromFile(this->file_path);
+    ref_glyph.setFont(current_font);
+    std::string unicode_char = "";
+    unicode_char += (char(char_code));
+    ref_glyph.setString(unicode_char);
+    ref_glyph.setPosition(sf::Vector2f(50, 84));
+    ref_glyph.setCharacterSize(int(410));
+    ref_glyph.setFillColor(sf::Color::White);
+    window->draw(ref_glyph);
+}
+
+void Font::display_char_code(sf::RenderWindow *window, uint32_t char_code)
+{
+    sf::Font font;
+    if (!font.loadFromFile(this->file_path))
+    {
+        assert(false);
+    }
+
+    sf::Text unicode_value_display;
+
+    unicode_value_display.setFont(font);
+
+    unicode_value_display.setFillColor(sf::Color::White);
+
+    unicode_value_display.setString(std::to_string(char_code));
+
+    unicode_value_display.setCharacterSize(24);
+
+    unicode_value_display.setPosition(100, 30);
+
+    window->draw(unicode_value_display);
 }

@@ -10,7 +10,7 @@ int main()
 {
     // Font f = Font();
     std::string file_name = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-    // file_name = "/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf";
+    file_name = "/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf";
     Font f = Font(file_name);
     sf::RenderWindow window(sf::VideoMode(1600, 800), "SFML works!");
 
@@ -78,31 +78,8 @@ int main()
         }
         window.clear(sf::Color(64, 48, 32));
 
-        f.show_glyph(&window, unicode_value);
+        f.show_glyph(&window, unicode_value, &shader);
 
-        sf::Text unicode_value_display;
-
-        unicode_value_display.setFont(font);
-
-        unicode_value_display.setFillColor(sf::Color::White);
-
-        unicode_value_display.setString(std::to_string(unicode_value));
-
-        unicode_value_display.setCharacterSize(24);
-
-        unicode_value_display.setPosition(30, 30);
-
-        window.draw(unicode_value_display);
-
-        sf::RectangleShape filled_in_glyph;
-        filled_in_glyph.setPosition(sf::Vector2f(1000, 185));
-        filled_in_glyph.setSize(sf::Vector2f(337, 337));
-        filled_in_glyph.setFillColor(sf::Color::White);
-
-        shader.setUniform("resolution", sf::Vector2f(filled_in_glyph.getSize().x, filled_in_glyph.getSize().y));
-        shader.setUniform("position", sf::Vector2f(filled_in_glyph.getPosition().x, filled_in_glyph.getPosition().y));
-
-        window.draw(filled_in_glyph, &shader);
         window.display();
     }
 
