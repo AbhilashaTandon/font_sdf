@@ -20,6 +20,7 @@ int main()
         return 1;
         // lazy error handling
     }
+    float font_size = 400.f;
 
     uint32_t unicode_value = 33;
 
@@ -32,7 +33,7 @@ int main()
 
     sf::Shader shader;
 
-    if (!shader.loadFromFile("../shaders/shader.frag", sf::Shader::Fragment))
+    if (!shader.loadFromFile("../shaders/test.frag", sf::Shader::Fragment))
     {
         return -1;
     }
@@ -70,6 +71,14 @@ int main()
                     }
                 }
 
+                else if (event.key.scancode == sf::Keyboard::Scan::Up)
+                {
+                    font_size *= 2.;
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Down)
+                {
+                    font_size *= .5;
+                }
                 else if (event.key.scancode == sf::Keyboard::Scan::Space)
                 {
                     color_contours = !color_contours;
@@ -78,7 +87,9 @@ int main()
         }
         window.clear(sf::Color(64, 48, 32));
 
-        f.show_glyph(&window, unicode_value, &shader);
+        sf::Vector2f pos = sf::Vector2f(1200.f, 84.f);
+
+        f.show_glyph(&window, unicode_value, pos, font_size, &shader);
 
         window.display();
     }

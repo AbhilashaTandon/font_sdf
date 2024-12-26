@@ -1,18 +1,25 @@
 #include "glyph.h"
 #include <cassert>
 
-Glyph::Glyph(FontFile *f, uint32_t start_idx)
+Glyph::Glyph(FontFile *f, uint32_t start_idx, uint16_t units_per_em)
 {
     (*f).jump_to(start_idx);
     this->num_contours = (*f).read_16_signed();
     this->compound_glyph = num_contours < 0;
     this->num_contours = compound_glyph ? 0 : num_contours;
-    this->xmin = (*f).read_16_signed();
-    this->ymin = (*f).read_16_signed();
-    this->xmax = (*f).read_16_signed();
-    this->ymax = (*f).read_16_signed();
+
+    float scale = UNITS_PER_EM / float(units_per_em);
+
+    this->units_per_em = units_per_em;
+
+    this->xmin = (*f).read_16_signed() * scale;
+    this->ymax = -(*f).read_16_signed() * scale;
+    this->xmax = (*f).read_16_signed() * scale;
+    this->ymin = -(*f).read_16_signed() * scale;
+
     assert(this->xmin <= this->xmax);
     assert(this->ymin <= this->ymax);
+
     // these assertions will fail for certain whitespace characters
     this->contour_ends = std::vector<uint16_t>();
     this->contours = std::vector<Contour>();
@@ -25,7 +32,7 @@ void Glyph::read_compound_glyph(FontFile *f)
 {
 }
 
-bool is_bit_set(uint8_t byte, uint8_t bit_idx)
+constexpr bool is_bit_set(uint8_t byte, uint8_t bit_idx)
 {
     return ((byte >> bit_idx) & 1) == 1;
 }
@@ -115,6 +122,7 @@ void Glyph::read_simple_glyph(FontFile *f)
     // first coordinates are relative to 0,0
     // we do this to avoid a special case for the first coordinate
 
+    float scale = UNITS_PER_EM / float(units_per_em);
     // x coords
     for (uint8_t flag : flags)
     {
@@ -141,7 +149,7 @@ void Glyph::read_simple_glyph(FontFile *f)
             }
         }
 
-        x_coords.push_back(last_x_value + x);
+        x_coords.push_back(last_x_value + x * scale);
     }
     // y coords
     for (uint8_t flag : flags)
@@ -169,7 +177,7 @@ void Glyph::read_simple_glyph(FontFile *f)
             }
         }
 
-        y_coords.push_back(last_y_value + y);
+        y_coords.push_back(last_y_value + y * scale);
     }
 
     assert(x_coords.size() == unsigned(this->num_vertices + 1));
@@ -190,7 +198,7 @@ void Glyph::read_simple_glyph(FontFile *f)
             bool on_curve = flag & 1;
             struct Vertex vx;
             vx.x = x_coords[vx_idx + 1];
-            vx.y = y_coords[vx_idx + 1];
+            vx.y = -y_coords[vx_idx + 1];
             vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
             contour_vertices.push_back(vx);
         }
@@ -264,4 +272,38 @@ void Glyph::read_simple_glyph(FontFile *f)
 
         prev_contour_end = contour_end;
     }
+}
+
+void Glyph::convert_vertices(sf::Vector2f pos, float font_size)
+{
+    for (int i = 0; i < num_contours; i++)
+    {
+        for (int j = 0; j < contours[i].curves.size(); j++)
+        {
+            struct Bezier b = contours[i].curves[j];
+
+            b.start = convert_coordinate(b.start, pos, font_size);
+            b.control = convert_coordinate(b.control, pos, font_size);
+            b.end = convert_coordinate(b.end, pos, font_size);
+
+            contours[i].curves[j] = b;
+        }
+    }
+}
+
+struct Vertex convert_coordinate(struct Vertex vx, sf::Vector2f pos, float font_size)
+{
+    // converts coordinates in em space (font) to pixel space (window)
+
+    float scale = font_size / (UNITS_PER_EM);
+    return Vertex{int16_t(vx.x * scale + pos.x), int16_t(vx.y * scale + pos.y), vx.vxtype};
+}
+
+sf::Vector2i convert_coordinate(sf::Vector2i vec, sf::Vector2f pos, float font_size)
+{
+    // converts coordinates in em space (font) to pixel space (window)
+
+    float scale = font_size / (UNITS_PER_EM);
+
+    return sf::Vector2i(vec.x * scale + pos.x, vec.y * scale + pos.y);
 }

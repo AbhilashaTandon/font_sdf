@@ -57,11 +57,18 @@ Font::Font(std::string file_path) : file(file_path)
     this->max_points = file.read_16();
     this->max_contours = file.read_16();
 
+    file.jump_to(this->table_offsets["head"] + 18);
+
+    this->units_per_em = file.read_16();
+
+    float scale = UNITS_PER_EM / float(units_per_em);
+
     file.jump_to(this->table_offsets["head"] + 36);
-    this->xmin = file.read_16_signed();
-    this->ymin = file.read_16_signed();
-    this->xmax = file.read_16_signed();
-    this->ymax = file.read_16_signed();
+
+    this->xmin = file.read_16_signed() * scale;
+    this->ymax = -file.read_16_signed() * scale;
+    this->xmax = file.read_16_signed() * scale;
+    this->ymin = -file.read_16_signed() * scale;
 
     assert(this->xmax >= this->xmin);
     assert(this->ymax >= this->ymin);
@@ -143,7 +150,7 @@ Glyph Font::get_glyph_outline(uint32_t unicode_value)
         {
             throw std::runtime_error("Glyph not found in file");
         }
-        Glyph g = Glyph(&file, this->table_offsets["glyf"] + offset);
+        Glyph g = Glyph(&file, this->table_offsets["glyf"] + offset, this->units_per_em);
 
         g.read_glyph(&file);
         glyphs.insert({unicode_value, g});

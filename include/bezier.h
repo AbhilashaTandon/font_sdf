@@ -2,6 +2,9 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 
+#define UNITS_PER_EM 1024.f
+#define DPI 96.f
+
 enum VxType
 {
     off_curve,
@@ -27,4 +30,4 @@ struct Bezier
 // TODO: make bezier class w 2 or 3 vertices, move the above struct and enum to bezier.h
 // change contour to list of beziers
 
-sf::VertexArray get_outline(struct Bezier b);
+sf::VertexArray get_outline(struct Bezier b, sf::Vector2f pos);
