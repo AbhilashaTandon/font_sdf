@@ -1,27 +1,26 @@
+
 #version 330
-
 uniform int num_curves;
-uniform vec2 resolution;
 uniform sampler2D beziers;
-uniform vec2 position;
-uniform vec2 window_size;
 
+uniform float font_size;
+uniform float units_per_em;
+uniform vec2 position;
+uniform float bbox_height;
+
+vec2 pixel_to_em(vec2 px){
+    float scale = units_per_em / font_size;
+    return (px - position) * scale; 
+}
 
 void main()
 {
     int num_vertices = num_curves * 3;
-    vec2 p;
-     
-    p.x = (gl_FragCoord.x - position.x) * 6.; 
-    p.y = (gl_FragCoord.y - position.y) * 6. - 1000.;
-
-
-
+    vec2 coords = pixel_to_em(gl_FragCoord.xy) ; 
+    
     vec4 color = vec4(0.);
 
-
     for(int i = 0; i < num_vertices; i+=3){
-        
         ivec4 start_texel = ivec4(texelFetch(beziers, ivec2(i, 0), 0) * 255.);
         ivec4 control_texel = ivec4(texelFetch(beziers, ivec2(i + 1, 0), 0) * 255.);
         ivec4 end_texel = ivec4(texelFetch(beziers, ivec2(i + 2, 0), 0) * 255.);
@@ -50,24 +49,20 @@ void main()
 
         //TODO: fix this by making inputs unsigned (add 32768 to the signed value)
        
-        if(length(start_coords * 2. - p) < 10.){
+        if(length(start_coords - coords) < 5.){
             color.r = 1.;
         } 
  
-        if(length(control_coords * 2. - p) < 10.){
+        if(length(control_coords - coords) < 5.){
             color.g = 1.;
         } 
  
-        if(length(end_coords * 2.- p) < 10.){
+        if(length(end_coords - coords) < 5.){
             color.b= 1.;
         } 
-
-
-
     }
+
     color.a = 1.;
 
-
-    // multiply it by the color
     gl_FragColor = color; 
 }

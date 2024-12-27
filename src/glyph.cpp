@@ -13,7 +13,7 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx, uint16_t units_per_em)
     this->units_per_em = units_per_em;
 
     this->xmin = (*f).read_16_signed() * scale;
-    this->ymax = -(*f).read_16_signed() * scale;
+    this->ymax = -(*f).read_16_signed() * scale; // negative to invert y axis
     this->xmax = (*f).read_16_signed() * scale;
     this->ymin = -(*f).read_16_signed() * scale;
 
@@ -282,16 +282,16 @@ void Glyph::convert_vertices(sf::Vector2f pos, float font_size)
         {
             struct Bezier b = contours[i].curves[j];
 
-            b.start = convert_coordinate(b.start, pos, font_size);
-            b.control = convert_coordinate(b.control, pos, font_size);
-            b.end = convert_coordinate(b.end, pos, font_size);
+            b.start = em_to_pixel(b.start, pos, font_size);
+            b.control = em_to_pixel(b.control, pos, font_size);
+            b.end = em_to_pixel(b.end, pos, font_size);
 
             contours[i].curves[j] = b;
         }
     }
 }
 
-struct Vertex convert_coordinate(struct Vertex vx, sf::Vector2f pos, float font_size)
+struct Vertex em_to_pixel(struct Vertex vx, sf::Vector2f pos, float font_size)
 {
     // converts coordinates in em space (font) to pixel space (window)
 
@@ -299,7 +299,7 @@ struct Vertex convert_coordinate(struct Vertex vx, sf::Vector2f pos, float font_
     return Vertex{int16_t(vx.x * scale + pos.x), int16_t(vx.y * scale + pos.y), vx.vxtype};
 }
 
-sf::Vector2i convert_coordinate(sf::Vector2i vec, sf::Vector2f pos, float font_size)
+sf::Vector2i em_to_pixel(sf::Vector2i vec, sf::Vector2f pos, float font_size)
 {
     // converts coordinates in em space (font) to pixel space (window)
 

@@ -11,8 +11,8 @@ struct Contour
     bool is_clockwise;
 };
 
-struct Vertex convert_coordinate(struct Vertex vx, sf::Vector2f pos, float font_size);
-sf::Vector2i convert_coordinate(sf::Vector2i vec, sf::Vector2f pos, float font_size);
+struct Vertex em_to_pixel(struct Vertex vx, sf::Vector2f pos, float font_size);
+sf::Vector2i em_to_pixel(sf::Vector2i vec, sf::Vector2f pos, float font_size);
 
 class Glyph
 {

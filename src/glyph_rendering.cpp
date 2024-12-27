@@ -20,7 +20,7 @@ const sf::Color contour_colors[9] = {
 void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader)
 {
 
-    const float glyph_top = convert_coordinate(sf::Vector2i(0, UNITS_PER_EM), pos, font_size).y;
+    const float glyph_top = em_to_pixel(sf::Vector2i(0, UNITS_PER_EM), pos, font_size).y;
     // height of glyph (1024 ems) in pixel space
     Glyph g = get_glyph_outline(char_code);
 
@@ -34,7 +34,7 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f
         assert(c.curves.size() > 0);
         for (struct Bezier b : c.curves)
         {
-            sf::VertexArray pts = get_outline(b, sf::Vector2f(600.f, pos.y + glyph_top - 76.f));
+            sf::VertexArray pts = get_outline(b, sf::Vector2f(600.f, pos.y + glyph_top));
 
             // we do this to reference the top left (0, -1024) of the glyph instead of the bottom left(0, 0)
             // thats more intuitive
@@ -49,12 +49,19 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f
 
 void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size, sf::Shader *shader)
 {
-    const float glyph_top = convert_coordinate(sf::Vector2i(0, UNITS_PER_EM), pos, font_size).y;
-    sf::Vector2i char_top_left = convert_coordinate(sf::Vector2i(g.xmin, g.ymin + 1000.f), pos, font_size);
+    // pos is top left of glyph
+    const sf::Vector2f bbox_bottom_left = sf::Vector2f(em_to_pixel(sf::Vector2i(0, UNITS_PER_EM), pos, font_size));
+    const sf::Vector2f bbox_top_left = sf::Vector2f(em_to_pixel(sf::Vector2i(0, 0), pos, font_size));
+    // box with dimensions 1em x 1em with bottom at baseline and left at left edge
 
-    sf::Vector2i char_bottom_right = convert_coordinate(sf::Vector2i(g.xmax, g.ymax + 1000.f), pos, font_size);
+    // on baseline at left
+    sf::Vector2i char_top_left = em_to_pixel(sf::Vector2i(g.xmin, g.ymin + UNITS_PER_EM), pos, font_size);
+
+    sf::Vector2i char_bottom_right = em_to_pixel(sf::Vector2i(g.xmax, g.ymax + UNITS_PER_EM), pos, font_size);
 
     sf::Vector2i char_bbox_size = char_bottom_right - char_top_left;
+
+    assert(char_bottom_right.y >= char_top_left.y);
 
     sf::RectangleShape char_bbox(sf::Vector2f(char_bbox_size.x, char_bbox_size.y));
     char_bbox.setPosition(sf::Vector2f(char_top_left));
@@ -69,7 +76,7 @@ void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, flo
     {
         for (struct Bezier bezier : contour.curves)
         {
-
+            // pack coordinates into color channels
             vertices[idx++] = ((bezier.start.x) & 0xff00) >> 8;
             // higher order byte of x coord
             vertices[idx++] = (bezier.start.x) & 0x00ff;
@@ -115,9 +122,9 @@ void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, flo
     shader->setUniform("num_curves", (int)g.num_curves);
 
     shader->setUniform("font_size", font_size);
-    shader->setUniform("position", sf::Vector2f(char_bbox.getPosition().x, char_bbox.getPosition().y));
+    shader->setUniform("position", bbox_bottom_left);
     shader->setUniform("units_per_em", UNITS_PER_EM);
-    shader->setUniform("size", char_bbox_size);
+    shader->setUniform("bbox_height", bbox_bottom_left.y - bbox_top_left.y);
 
     window->draw(char_bbox, shader);
 }
@@ -131,7 +138,7 @@ void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, float fo
     std::string unicode_char = "";
     unicode_char += (char(char_code));
     ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(50, 90));
+    ref_glyph.setPosition(sf::Vector2f(50, 0));
     ref_glyph.setCharacterSize(int(font_size));
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);
@@ -148,13 +155,9 @@ void Font::display_char_code(sf::RenderWindow *window, uint32_t char_code)
     sf::Text unicode_value_display;
 
     unicode_value_display.setFont(font);
-
     unicode_value_display.setFillColor(sf::Color::White);
-
     unicode_value_display.setString(std::to_string(char_code));
-
     unicode_value_display.setCharacterSize(24);
-
     unicode_value_display.setPosition(100, 30);
 
     window->draw(unicode_value_display);

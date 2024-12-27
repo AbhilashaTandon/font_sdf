@@ -33,7 +33,7 @@ int main()
 
     sf::Shader shader;
 
-    if (!shader.loadFromFile("../shaders/test.frag", sf::Shader::Fragment))
+    if (!shader.loadFromFile("../shaders/shader.frag", sf::Shader::Fragment))
     {
         return -1;
     }
@@ -73,11 +73,11 @@ int main()
 
                 else if (event.key.scancode == sf::Keyboard::Scan::Up)
                 {
-                    font_size *= 2.;
+                    font_size *= 1.01;
                 }
                 else if (event.key.scancode == sf::Keyboard::Scan::Down)
                 {
-                    font_size *= .5;
+                    font_size /= 1.01;
                 }
                 else if (event.key.scancode == sf::Keyboard::Scan::Space)
                 {
@@ -87,7 +87,7 @@ int main()
         }
         window.clear(sf::Color(64, 48, 32));
 
-        sf::Vector2f pos = sf::Vector2f(1200.f, 84.f);
+        sf::Vector2f pos = sf::Vector2f(1200.f, 0.f);
 
         f.show_glyph(&window, unicode_value, pos, font_size, &shader);
 
