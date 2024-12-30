@@ -27,7 +27,7 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f
     render_glyph(window, g, pos, font_size, shader);
     g.convert_vertices(sf::Vector2f(0., 0.), font_size);
 
-    draw_ref_glyph(window, char_code, font_size); // uses the builtin sfml render to compare to ours
+    draw_ref_glyph(window, char_code, pos, font_size); // uses the builtin sfml render to compare to ours
     assert(g.contours.size() > 0);
     for (struct Contour c : g.contours)
     {
@@ -49,15 +49,16 @@ void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f
 
 void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size, sf::Shader *shader)
 {
+    float window_height = window->getSize().y * UNITS_PER_EM / font_size;
     // pos is top left of glyph
     const sf::Vector2f bbox_bottom_left = sf::Vector2f(em_to_pixel(sf::Vector2i(0, UNITS_PER_EM), pos, font_size));
-    const sf::Vector2f bbox_top_left = sf::Vector2f(em_to_pixel(sf::Vector2i(0, 0), pos, font_size));
+    // const sf::Vector2f bbox_top_left = sf::Vector2f(em_to_pixel(sf::Vector2i(0, 0), pos, font_size));
     // box with dimensions 1em x 1em with bottom at baseline and left at left edge
 
     // on baseline at left
-    sf::Vector2i char_top_left = em_to_pixel(sf::Vector2i(g.xmin, g.ymin + UNITS_PER_EM), pos, font_size);
+    sf::Vector2i char_top_left = em_to_pixel(sf::Vector2i(g.xmin, window_height - g.ymax - UNITS_PER_EM), pos, font_size);
 
-    sf::Vector2i char_bottom_right = em_to_pixel(sf::Vector2i(g.xmax, g.ymax + UNITS_PER_EM), pos, font_size);
+    sf::Vector2i char_bottom_right = em_to_pixel(sf::Vector2i(g.xmax, window_height - g.ymin - UNITS_PER_EM), pos, font_size);
 
     sf::Vector2i char_bbox_size = char_bottom_right - char_top_left;
 
@@ -122,14 +123,13 @@ void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, flo
     shader->setUniform("num_curves", (int)g.num_curves);
 
     shader->setUniform("font_size", font_size);
-    shader->setUniform("position", bbox_bottom_left);
+    shader->setUniform("position", sf::Vector2f(bbox_bottom_left.x, window->getSize().y - bbox_bottom_left.y)); // since gl_FragCoord has y axis invert i need to flip all coordinates i pass to the shader
     shader->setUniform("units_per_em", UNITS_PER_EM);
-    shader->setUniform("bbox_height", bbox_bottom_left.y - bbox_top_left.y);
 
     window->draw(char_bbox, shader);
 }
 
-void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, float font_size)
+void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size)
 {
     sf::Text ref_glyph;
     sf::Font current_font;
@@ -138,7 +138,7 @@ void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, float fo
     std::string unicode_char = "";
     unicode_char += (char(char_code));
     ref_glyph.setString(unicode_char);
-    ref_glyph.setPosition(sf::Vector2f(50, 0));
+    ref_glyph.setPosition(sf::Vector2f(50, pos.y));
     ref_glyph.setCharacterSize(int(font_size));
     ref_glyph.setFillColor(sf::Color::White);
     window->draw(ref_glyph);

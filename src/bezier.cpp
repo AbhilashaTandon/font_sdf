@@ -16,7 +16,7 @@ sf::VertexArray get_outline(Bezier b, sf::Vector2f pos)
             float t = float(i) / float(param_range);
             sf::Vector2f vx;
             vx.x = b.start.x * (1.f - t) * (1.f - t) + 2.f * b.control.x * (1.f - t) * t + b.end.x * t * t;
-            vx.y = b.start.y * (1.f - t) * (1.f - t) + 2.f * b.control.y * (1.f - t) * t + b.end.y * t * t;
+            vx.y = -(b.start.y * (1.f - t) * (1.f - t) + 2.f * b.control.y * (1.f - t) * t + b.end.y * t * t);
             sf::Vertex v;
             v.position = vx + pos;
             v.color = sf::Color::White;
@@ -33,8 +33,8 @@ sf::VertexArray get_outline(Bezier b, sf::Vector2f pos)
         line[0].color = sf::Color::White;
         line[1].color = sf::Color::White;
 
-        line[0].position = sf::Vector2f(b.start.x, b.start.y) + pos;
-        line[1].position = sf::Vector2f(b.end.x, b.end.y) + pos;
+        line[0].position = sf::Vector2f(b.start.x, -b.start.y) + pos;
+        line[1].position = sf::Vector2f(b.end.x, -b.end.y) + pos;
 
         return line;
     }

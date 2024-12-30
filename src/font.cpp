@@ -66,9 +66,9 @@ Font::Font(std::string file_path) : file(file_path)
     file.jump_to(this->table_offsets["head"] + 36);
 
     this->xmin = file.read_16_signed() * scale;
-    this->ymax = -file.read_16_signed() * scale;
+    this->ymin = file.read_16_signed() * scale;
     this->xmax = file.read_16_signed() * scale;
-    this->ymin = -file.read_16_signed() * scale;
+    this->ymax = file.read_16_signed() * scale;
 
     assert(this->xmax >= this->xmin);
     assert(this->ymax >= this->ymin);

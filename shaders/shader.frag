@@ -6,11 +6,23 @@ uniform sampler2D beziers;
 uniform float font_size;
 uniform float units_per_em;
 uniform vec2 position;
-uniform float bbox_height;
 
 vec2 pixel_to_em(vec2 px){
     float scale = units_per_em / font_size;
     return (px - position) * scale; 
+}
+
+ivec2 convert_coords(ivec4 texel){
+    ivec2 coords;
+
+    //unpack coordinates
+    coords.x = texel.r * 256 + texel.g;
+    coords.y = texel.b * 256 + texel.a;
+
+    coords.x -= coords.x > 32768 ? 65536 : 0;
+    coords.y -= coords.y > 32768 ? 65536 : 0;
+
+    return coords;
 }
 
 void main()
@@ -26,29 +38,10 @@ void main()
         ivec4 end_texel = ivec4(texelFetch(beziers, ivec2(i + 2, 0), 0) * 255.);
 
         //unpack coordinates 
-        ivec2 start_coords;
-        start_coords.x = start_texel.r * 256 + start_texel.g;
-        start_coords.y = (start_texel.b * 256 + start_texel.a);
-      
-        ivec2 control_coords;
-        control_coords.x = control_texel.r * 256 + control_texel.g;
-        control_coords.y = (control_texel.b * 256 + control_texel.a);
+        ivec2 start_coords = convert_coords(start_texel);
+        ivec2 control_coords = convert_coords(control_texel);
+        ivec2 end_coords = convert_coords(end_texel);
 
-        ivec2 end_coords;
-        end_coords.x = end_texel.r * 256 + end_texel.g;
-        end_coords.y = (end_texel.b * 256 + end_texel.a);
-
-        start_coords.x -= start_coords.x > 32768 ? 65536 : 0;
-        start_coords.y = start_coords.y > 32768 ? 65536 - start_coords.y : -start_coords.y;
-
-        control_coords.x -= control_coords.x > 32768 ? 65536 : 0;
-        control_coords.y = control_coords.y > 32768 ? 65536 - control_coords.y : -control_coords.y;
-
-        end_coords.x -= end_coords.x > 32768 ? 65536 : 0;
-        end_coords.y = end_coords.y > 32768 ? 65536 - end_coords.y : -end_coords.y;
-
-        //TODO: fix this by making inputs unsigned (add 32768 to the signed value)
-       
         if(length(start_coords - coords) < 5.){
             color.r = 1.;
         } 

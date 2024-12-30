@@ -13,9 +13,9 @@ Glyph::Glyph(FontFile *f, uint32_t start_idx, uint16_t units_per_em)
     this->units_per_em = units_per_em;
 
     this->xmin = (*f).read_16_signed() * scale;
-    this->ymax = -(*f).read_16_signed() * scale; // negative to invert y axis
+    this->ymin = (*f).read_16_signed() * scale; // negative to invert y axis
     this->xmax = (*f).read_16_signed() * scale;
-    this->ymin = -(*f).read_16_signed() * scale;
+    this->ymax = (*f).read_16_signed() * scale;
 
     assert(this->xmin <= this->xmax);
     assert(this->ymin <= this->ymax);
@@ -198,7 +198,7 @@ void Glyph::read_simple_glyph(FontFile *f)
             bool on_curve = flag & 1;
             struct Vertex vx;
             vx.x = x_coords[vx_idx + 1];
-            vx.y = -y_coords[vx_idx + 1];
+            vx.y = y_coords[vx_idx + 1];
             vx.vxtype = ((flag & 1) != 0) ? VxType::on_curve : VxType::off_curve;
             contour_vertices.push_back(vx);
         }

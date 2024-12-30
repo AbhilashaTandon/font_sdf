@@ -38,6 +38,8 @@ int main()
         return -1;
     }
 
+    sf::Vector2f pos = sf::Vector2f(1200.f, 200.f);
+
     while (window.isOpen())
     {
         sf::Event event;
@@ -53,7 +55,7 @@ int main()
                 {
                     window.close();
                 }
-                else if (event.key.scancode == sf::Keyboard::Scan::Right)
+                else if (event.key.scancode == sf::Keyboard::D)
                 {
                     unicode_value++;
 
@@ -62,7 +64,7 @@ int main()
                         unicode_value++;
                     }
                 }
-                else if (event.key.scancode == sf::Keyboard::Scan::Left)
+                else if (event.key.scancode == sf::Keyboard::A)
                 {
                     unicode_value--;
                     while (f.get_glyph_offset(unicode_value) == -1)
@@ -71,11 +73,11 @@ int main()
                     }
                 }
 
-                else if (event.key.scancode == sf::Keyboard::Scan::Up)
+                else if (event.key.scancode == sf::Keyboard::Scan::W)
                 {
                     font_size *= 1.01;
                 }
-                else if (event.key.scancode == sf::Keyboard::Scan::Down)
+                else if (event.key.scancode == sf::Keyboard::Scan::S)
                 {
                     font_size /= 1.01;
                 }
@@ -83,11 +85,26 @@ int main()
                 {
                     color_contours = !color_contours;
                 }
+
+                else if (event.key.scancode == sf::Keyboard::Scan::Left)
+                {
+                    pos.x -= 10.f;
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Right)
+                {
+                    pos.x += 10.f;
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Up)
+                {
+                    pos.y -= 10.f;
+                }
+                else if (event.key.scancode == sf::Keyboard::Scan::Down)
+                {
+                    pos.y += 10.f;
+                }
             }
         }
         window.clear(sf::Color(64, 48, 32));
-
-        sf::Vector2f pos = sf::Vector2f(1200.f, 0.f);
 
         f.show_glyph(&window, unicode_value, pos, font_size, &shader);
 
