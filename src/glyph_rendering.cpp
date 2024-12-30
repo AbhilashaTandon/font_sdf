@@ -47,7 +47,7 @@ void Font::show_glyph_debug(sf::RenderWindow *window, uint32_t char_code, sf::Ve
     display_char_code(window, char_code);
 }
 
-void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size, sf::Shader *shader)
+float Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size, sf::Shader *shader)
 {
     float window_height = window->getSize().y * UNITS_PER_EM / font_size;
     // pos is top left of glyph
@@ -56,9 +56,9 @@ void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, flo
     // box with dimensions 1em x 1em with bottom at baseline and left at left edge
 
     // on baseline at left
-    sf::Vector2i char_top_left = em_to_pixel(sf::Vector2i(g.xmin, window_height - g.ymax - UNITS_PER_EM), pos, font_size);
+    sf::Vector2i char_top_left = em_to_pixel(sf::Vector2i(g.xmin, UNITS_PER_EM - g.ymax), pos, font_size);
 
-    sf::Vector2i char_bottom_right = em_to_pixel(sf::Vector2i(g.xmax, window_height - g.ymin - UNITS_PER_EM), pos, font_size);
+    sf::Vector2i char_bottom_right = em_to_pixel(sf::Vector2i(g.xmax, UNITS_PER_EM - g.ymin), pos, font_size);
 
     sf::Vector2i char_bbox_size = char_bottom_right - char_top_left;
 
@@ -127,6 +127,8 @@ void Font::render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, flo
     shader->setUniform("units_per_em", UNITS_PER_EM);
 
     window->draw(char_bbox, shader);
+
+    return char_bottom_right.x - char_top_left.x;
 }
 
 void Font::draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size)
@@ -161,4 +163,27 @@ void Font::display_char_code(sf::RenderWindow *window, uint32_t char_code)
     unicode_value_display.setPosition(100, 30);
 
     window->draw(unicode_value_display);
+}
+
+float Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader)
+{
+    Glyph g = get_glyph_outline(char_code);
+
+    return render_glyph(window, g, pos, font_size, shader);
+}
+
+void Font::render_text(sf::RenderWindow *window, std::string text, sf::Vector2f pos, float font_size, sf::Shader *shader, float padding)
+{
+    for (char c : text)
+    {
+        if (c == ' ')
+        {
+            pos += sf::Vector2f(font_size / 2. + padding * font_size / UNITS_PER_EM, 0.);
+            // add space width
+            // font_size is 1 em width in pixels
+            continue;
+        }
+        float right_edge = show_glyph(window, uint32_t(c), pos, font_size, shader);
+        pos += sf::Vector2f(right_edge + padding * font_size / UNITS_PER_EM, 0.);
+    }
 }

@@ -10,7 +10,7 @@ int main()
 {
     // Font f = Font();
     std::string file_name = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-    file_name = "/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf";
+    // file_name = "/home/abhilasha/Fonts/FiraCodeNerdFont-Medium.ttf";
     Font f = Font(file_name);
     sf::RenderWindow window(sf::VideoMode(1600, 800), "SFML works!");
 
@@ -20,7 +20,7 @@ int main()
         return 1;
         // lazy error handling
     }
-    float font_size = 400.f;
+    float font_size = 12.f;
 
     uint32_t unicode_value = 33;
 
@@ -38,7 +38,9 @@ int main()
         return -1;
     }
 
-    sf::Vector2f pos = sf::Vector2f(1200.f, 200.f);
+    sf::Vector2f pos = sf::Vector2f(200.f, 200.f);
+
+    std::string text = "The quick brown fox jumps over the lazy dog. 1234567890 !@#$%^&*() -";
 
     while (window.isOpen())
     {
@@ -106,7 +108,7 @@ int main()
         }
         window.clear(sf::Color(64, 48, 32));
 
-        f.show_glyph_debug(&window, unicode_value, pos, font_size, &shader);
+        f.render_text(&window, text, pos, font_size, &shader, 200.f);
 
         window.display();
     }
