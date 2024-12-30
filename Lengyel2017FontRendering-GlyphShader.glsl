@@ -75,7 +75,7 @@ void main()
 		// Fetch the three 2D control points for the current curve from the
 		// curve texture. The first texel contains both p1 and p2 in the
 		// (x,y) and (z,w) components, respectively, and the the second texel
-		// contains p3 in the (x,y) components. The quadratic Bézier curve
+		// contains p3 in the (x,y) components. The quadratic Bï¿½zier curve
 		// C(t) is given by
 		//
 		//     C(t) = (1 - t)^2 p1 + 2t(1 - t) p2 + t^2 p3
@@ -116,7 +116,7 @@ void main()
 			float by = p12.y - p12.w;
 			float ra = 1.0 / ay;
 
-			float d = sqrt(max(by * by - ay * p12.y, 0.0));
+			float d = sqrt(max(by * by - ay * start_coords.y, 0.0));
 			float t1 = (by - d) * ra;
 			float t2 = (by + d) * ra;
 

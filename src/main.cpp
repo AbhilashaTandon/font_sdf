@@ -106,7 +106,7 @@ int main()
         }
         window.clear(sf::Color(64, 48, 32));
 
-        f.show_glyph(&window, unicode_value, pos, font_size, &shader);
+        f.show_glyph_debug(&window, unicode_value, pos, font_size, &shader);
 
         window.display();
     }

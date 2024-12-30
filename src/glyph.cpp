@@ -250,8 +250,9 @@ void Glyph::read_simple_glyph(FontFile *f)
             if (contour_vertices[vx_idx].vxtype != off_curve)
             {
                 b.is_curve = false;
-                b.control = b.start;
                 b.end = contour_vertices[vx_idx];
+                b.control.x = (b.start.x + b.end.x) / 2;
+                b.control.y = (b.start.y + b.end.y) / 2;
             }
             else
             {

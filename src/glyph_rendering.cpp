@@ -17,7 +17,7 @@ const sf::Color contour_colors[9] = {
     sf::Color(0, 150, 0),
     sf::Color(45, 93, 158)};
 
-void Font::show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader)
+void Font::show_glyph_debug(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader)
 {
 
     const float glyph_top = em_to_pixel(sf::Vector2i(0, UNITS_PER_EM), pos, font_size).y;

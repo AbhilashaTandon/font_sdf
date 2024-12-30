@@ -39,7 +39,7 @@ public:
 
     // display methods
     void show_bbox(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size);
-    void show_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader);
+    void show_glyph_debug(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size, sf::Shader *shader);
     void render_glyph(sf::RenderWindow *window, Glyph g, sf::Vector2f pos, float font_size, sf::Shader *shader);
     void draw_ref_glyph(sf::RenderWindow *window, uint32_t char_code, sf::Vector2f pos, float font_size);
     void display_char_code(sf::RenderWindow *window, uint32_t char_code);
