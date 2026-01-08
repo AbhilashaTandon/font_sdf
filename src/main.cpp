@@ -17,7 +17,7 @@ int main()
         return 1;
         // lazy error handling
     }
-    float font_size = 400.f;
+    float font_size = 12.f;
 
     uint32_t unicode_value = 33;
 
@@ -27,12 +27,12 @@ int main()
     }
 
     sf::Shader shader;
-    if (!shader.loadFromFile("../shaders/shader.frag", sf::Shader::Fragment))
+    if (!shader.loadFromFile("../shaders/sdf.frag", sf::Shader::Fragment))
     {
         return -1;
     }
 
-    sf::Vector2f pos = sf::Vector2f(1200.f, 200.f);
+    sf::Vector2f pos = sf::Vector2f(0.f, 0.f);
 
     std::string text = "The quick brown fox jumps over the lazy dog. 1234567890 !@#$%^&*() -";
 
@@ -49,6 +49,7 @@ void render_text(sf::RenderWindow &window, uint32_t &unicode_value, Font &f, flo
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)
+
             {
                 window.close();
             }
@@ -102,9 +103,9 @@ void render_text(sf::RenderWindow &window, uint32_t &unicode_value, Font &f, flo
 
         window.clear(sf::Color(48, 64, 72));
 
-        f.show_glyph_debug(&window, unicode_value, pos, font_size, &shader);
+        // f.show_glyph_debug(&window, unicode_value, pos, font_size, &shader);
 
-        // f.render_text(&window, text, pos, font_size, &shader, 200.f);
+        f.render_text(&window, text, pos, font_size, &shader, 200.f);
 
         window.display();
     }
