@@ -10,7 +10,7 @@ The code for the first part of this is contained in `font.h/cpp`, `font_file.h/c
 
 The second part is accomplished by `bezier.h/cpp`, `glyph.h/cpp`, and `glyph_rendering.cpp`. These files convert the data given in the TTF file to a more usable format, adding in implicit points in the bezier curves and converting offsets to actual coordinates in em space. This data is then packed into a texture containing the coordinates for each point in the glyph in groups of three for each quadratic bezier. The high and low bytes of the x coordinate are stored in the red and green channels of the texel respectively, and the high and low bytes of the y coordinate are stored in the blue and alpha channels.
 
-The third part is accomplished by the shader, contained in `shader.frag`. This utilizes the "winding number" method used in the paper above to directly render bezier curves from their data.
+The third part is accomplished by the shader, contained in `shader.frag`. This utilizes the "winding number" method used in the paper above to directly render bezier curves from their data. SFML is used for window and shader management.
 
 ## Todo
 
