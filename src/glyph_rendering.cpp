@@ -178,7 +178,7 @@ void Font::render_text(sf::RenderWindow *window, std::string text, sf::Vector2f 
     {
         if (c == ' ')
         {
-            pos += sf::Vector2f(font_size / 2. + padding * font_size / UNITS_PER_EM, 0.);
+            pos += sf::Vector2f(font_size / 2.5 + padding * font_size / UNITS_PER_EM, 0.);
             // add space width
             // font_size is 1 em width in pixels
             continue;
